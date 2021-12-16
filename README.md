@@ -85,19 +85,31 @@ Drug gene set analysis is done by executing the script `drugsea.py`. The only fl
 The following code tests individual drug gene set analysis for associated with schizophrenia. The SCZ_SAMPLE.genes.raw was created using MAGMA and the 2021 schizophrenia GWAS summary statistics, downloaded [here](https://www.med.unc.edu/pgc/download-results/). Additionally, the code tests for ATC III codes for enrichment of drugs that are highly associated with schizophrenia, with a minimum sample size of 5 drugs for each ATC code. Lastly, it specifies to not show output from MAGMA (to see this go to the .log file in the directory `/drugsea/OUTPUT/`.     
 
 `python ./drugsea.py --geneassoc SCZ_SAMPLE.genes.raw --drugsets solo --out SCZ --enrich atc --nsize 5 --showlog no`    
+    
+## Output    
+   
+The formats of the output files from the drug gene set analysis in MAGMA (.gsa.out, .gsa.genes.out .gsa.sets.genes.out) is described [here](https://ctg.cncr.nl/software/MAGMA/doc/manual_v1.09.pdf) on page 23.    
+    
+##### Drug gene set analysis
+* `.gsa.genes.out` contains information for each gene used in the MAGMA analysis   
+* `.gsa.out` contains information for each drug gene set used in the MAGMA analysis    
+* `.gsa.sets.genes.out` contains information on significant drug gene sets after Bonferroni correction, and the genes in each gene set  
+    
+##### Enrichment analysis 
+* `enrich.OUT.txt` contains the results from the enrichment analysis for every drug category tested
+* `enrich.bonf.OUT.txt` contains the results from the enrichment analysis for drug significant after Bonferroni correction   
   
-## Output 
+Both enrichment output files contain the same columns:
+* `GROUP` the drug category tested 
+* `MWU` Wilcoxon Mann Whitney U statistic from a one-tailed test whether the p-values in the group are lower then the p-values for drugs not in the group
+* `P` p-value from the Wilcoxon Mann Whitney U test
+* `AUC` Area under the enrichment curve for drugs in the group tested for enrichment, as described [here](https://www.nature.com/articles/s41598-017-12325-3)
 
 
-
-
-
-
-
-
-
-
+# Support   
+   
+Any questions, issues, or feedback can be posted to the DRUGSEA repository's issue tracker.   
 
 
 ## References 
- [^1]: de Leeuw C, Mooij J, Heskes T, Posthuma D (2015): MAGMA: Generalized gene-set analysis of GWAS data. PLoS Comput Biol 11(4): e1004219. doi:10.1371/journal.pcbi.1004219 (link )
+ [^1]: de Leeuw C, Mooij J, Heskes T, Posthuma D (2015): MAGMA: Generalized gene-set analysis of GWAS data. PLoS Comput Biol 11(4): e1004219. doi:10.1371/journal.pcbi.1004219
