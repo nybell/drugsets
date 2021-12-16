@@ -91,12 +91,12 @@ The following code tests individual drug gene set analysis for associated with s
    
 The formats of the output files from the drug gene set analysis in MAGMA (.gsa.out, .gsa.genes.out .gsa.sets.genes.out) is described [here](https://ctg.cncr.nl/software/MAGMA/doc/manual_v1.09.pdf) on page 23.    
     
-##### Drug gene set analysis
+#### Drug gene set analysis
 * `.gsa.genes.out` contains information for each gene used in the MAGMA analysis   
 * `.gsa.out` contains information for each drug gene set used in the MAGMA analysis    
 * `.gsa.sets.genes.out` contains information on significant drug gene sets after Bonferroni correction, and the genes in each gene set  
     
-##### Enrichment analysis 
+#### Enrichment analysis 
 * `enrich.OUT.txt` contains the results from the enrichment analysis for every drug category tested
 * `enrich.bonf.OUT.txt` contains the results from the enrichment analysis for drug significant after Bonferroni correction   
   
