@@ -11,7 +11,7 @@ DRUGSEA was developed using [Python 3.8.5](https://www.python.org/) following pa
 [scikit-learn](http://scikit-learn.org) == 1.0   
 [matplotlib](https://matplotlib.org) == 3.4.2   
    
-Additionally, the [MAGMA](https://ctg.cncr.nl/software/magma) [^1](https://journals.plos.org/ploscompbiol/article?id=10.1371%2Fjournal.pcbi.1004219) software tool for gene and gene-set analysis is needed to run DRUGSEA. Full documentation of MAGMA can be found [here](https://ctg.cncr.nl/software/MAGMA/doc/manual_v1.09.pdf). MAGMA needs to be able to be executed globally, which can be setup by adding the following line to the end of the user's .bashrc or .zshrc file.    
+Additionally, the [MAGMA](https://ctg.cncr.nl/software/magma)[^1] software tool for gene and gene-set analysis is needed to run DRUGSEA. Full documentation of MAGMA can be found [here](https://ctg.cncr.nl/software/MAGMA/doc/manual_v1.09.pdf). MAGMA needs to be able to be executed globally, which can be setup by adding the following line to the end of the user's .bashrc or .zshrc file.    
    
 `export PATH=$PATH:/INSERT/PATH/TO/FILE/magma_v1.09b_mac/`   
    
@@ -99,4 +99,5 @@ The following code tests individual drug gene set analysis for associated with s
 
 
 
-
+## References 
+ [1]: de Leeuw C, Mooij J, Heskes T, Posthuma D (2015): MAGMA: Generalized gene-set analysis of GWAS data. PLoS Comput Biol 11(4): e1004219. doi:10.1371/journal.pcbi.1004219 (link )
