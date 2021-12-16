@@ -56,10 +56,7 @@ conda activate venv_drugsea
 1. Clone repository    
 `$ git clone https://github.com/nybell/drugsea`   
    
-2. Go to directory    
-`$ cd drugsea/`   
-   
-3. Add input data to directory `/DATA/MAGMA_ANNOT/`    
+2. Add input data to directory `/DATA/MAGMA_ANNOT/`    
 The only input data needed by the user is the [GENE_RESULTS].genes.raw file from MAGMA gene analysis. ***In order for DRUGSEA to run, users must put their [GENE_RESULTS].genes.raw into the `/DATA/MAGMA_ANNOT/` directory.*** All drug data used in the drug gene set analysis is included in the download, and is stored in the directory `/DATA/GENESETS/`.    
    
 ## Running drug gene set analysis   
@@ -82,8 +79,12 @@ Drug gene set analysis is done by executing the script `drugsea.py`. The only fl
     
 ### Example usage    
     
-The following code tests individual drug gene set analysis for associated with schizophrenia. The SCZ_SAMPLE.genes.raw was created using MAGMA and the 2021 schizophrenia GWAS summary statistics, downloaded [here](https://www.med.unc.edu/pgc/download-results/). Additionally, the code tests for ATC III codes for enrichment of drugs that are highly associated with schizophrenia, with a minimum sample size of 5 drugs for each ATC code. Lastly, it specifies to not show output from MAGMA (to see this go to the .log file in the directory `/drugsea/OUTPUT/`.     
-
+The following code tests individual drug gene set analysis for associated with schizophrenia. The SCZ_SAMPLE.genes.raw was created using MAGMA and the 2021 schizophrenia GWAS summary statistics, downloaded [here](https://www.med.unc.edu/pgc/download-results/). Additionally, the code tests for ATC III codes for enrichment of drugs that are highly associated with schizophrenia, with a minimum sample size of 5 drugs for each ATC code. Lastly, it specifies to not show output from MAGMA (to see this go to the .log file in the directory `/drugsea/OUTPUT/`.       
+  
+1. Go to directory      
+`$ cd drugsea/`     
+  
+2. Execute script 
 `python ./drugsea.py --geneassoc SCZ_SAMPLE.genes.raw --drugsets solo --out SCZ --enrich atc --nsize 5 --showlog no`    
     
 ## Output    
