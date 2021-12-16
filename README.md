@@ -84,7 +84,7 @@ The following code tests individual drug gene set analysis for associated with s
 1. Go to directory      
 `$ cd drugsea/`     
   
-2. Execute script 
+2. Execute script    
 `python ./drugsea.py --geneassoc SCZ_SAMPLE.genes.raw --drugsets solo --out SCZ --enrich atc --nsize 5 --showlog no`    
     
 ## Output    
