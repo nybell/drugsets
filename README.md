@@ -70,6 +70,7 @@ Drug gene set analysis is done by executing the script `drugsea.py`. The only fl
     * `moa` drug genesets for each mechanism of action category in our data 
     * `ind` drug gene sets for each clinical indication category in our data 
 * `--out` or `-o` specific prefix for output files
+* `--setsize` or `-s` specfify minimum N for drug gene sets. 
 * `--enrich` or `-e` test a type of category for enrichment of the drugs with the strongest associations to the phenotype measured using drug gene set analysis. There are three input options:
     * `atc` test for enrichment by ATC code 
     * `moa` test for enrichment by mechanism of action 
