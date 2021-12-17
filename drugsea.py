@@ -56,16 +56,16 @@ if args.setsize == 2:
 
 # set file paths for custom minimum gene set size 
 else:
-    subprocess.run("awk 'NF>=%d' %s > %s" % (args.setsize, GENESETDIR+'/drug_genesets.txt', GENESETDIR+'/drugsets_min%d.txt' % args.setsize), shell=True)
+    subprocess.run("awk 'NF>=%d' %s > %s" % (args.setsize+1, GENESETDIR+'/drug_genesets.txt', GENESETDIR+'/drugsets_min%d.txt' % args.setsize), shell=True)
     solo = os.path.normpath(os.path.join(GENESETDIR, 'drugsets_min%d.txt' % args.setsize))
 
-    subprocess.run('awk "NF>=%d" %s > %s' % (args.setsize, GENESETDIR+'/atc_sets.txt', GENESETDIR+'/atcsets_min%d.txt' % args.setsize), shell=True)
+    subprocess.run('awk "NF>=%d" %s > %s' % (args.setsize+1, GENESETDIR+'/atc_sets.txt', GENESETDIR+'/atcsets_min%d.txt' % args.setsize), shell=True)
     atc = os.path.normpath(os.path.join(GENESETDIR, 'atcsets_min%d.txt' % args.setsize))
 
-    subprocess.run('awk "NF>=%d" %s > %s' % (args.setsize, GENESETDIR+'/moa_sets.txt', GENESETDIR+'/moasets_min%d.txt' % args.setsize), shell=True)
+    subprocess.run('awk "NF>=%d" %s > %s' % (args.setsize+1, GENESETDIR+'/moa_sets.txt', GENESETDIR+'/moasets_min%d.txt' % args.setsize), shell=True)
     moa = os.path.normpath(os.path.join(GENESETDIR, 'moasets_min%d.txt' % args.setsize))
 
-    subprocess.run('awk "NF>=%d" %s > %s' % (args.setsize, GENESETDIR+'/ind_sets.txt', GENESETDIR+'/indsets_min%d.txt' % args.setsize), shell=True)
+    subprocess.run('awk "NF>=%d" %s > %s' % (args.setsize+1, GENESETDIR+'/ind_sets.txt', GENESETDIR+'/indsets_min%d.txt' % args.setsize), shell=True)
     ind = os.path.normpath(os.path.join(GENESETDIR, 'indsets_min%d.txt' % args.setsize))
 
 
