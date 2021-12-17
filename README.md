@@ -83,7 +83,7 @@ Drug gene set analysis is done by executing the script `drugsea.py`. The only fl
 The following code tests individual drug gene set analysis for associated with schizophrenia. The SCZ_SAMPLE.genes.raw was created using MAGMA and the 2021 schizophrenia GWAS summary statistics, downloaded [here](https://www.med.unc.edu/pgc/download-results/). Additionally, the code tests for ATC III codes for enrichment of drugs that are highly associated with schizophrenia, with a minimum sample size of 5 drugs for each ATC code. Lastly, it specifies to not show output from MAGMA (to see this go to the .log file in the directory `/drugsea/OUTPUT/`.       
   
 1. Go to directory      
-`$ cd drugsea-main/`     
+`$ cd /PATH/TO/drugsea-main/`     
   
 2. Execute script    
 `python ./drugsea.py --geneassoc SCZ_SAMPLE.genes.raw --drugsets solo --out SCZ --enrich atc --nsize 5 --showlog no`    
