@@ -29,7 +29,7 @@ pip install scikit-learn == 1.0
 pip install matplotlib == 3.4.2
 ```
    
-Users can also create a virutal environment in which to run DRUGSEA using [Conda](https://www.anaconda.com/products/individual) or [pyenv](https://github.com/pyenv/pyenv). A guide to installing pyenv can be found [here](https://github.com/pyenv/pyenv), and a guide to installing Conda can be found [here](https://docs.anaconda.com/anaconda/navigator/tutorials/index.html).    
+Users can also create a virtual environment in which to run DRUGSEA using [Conda](https://www.anaconda.com/products/individual) or [pyenv](https://github.com/pyenv/pyenv). A guide to installing pyenv can be found [here](https://github.com/pyenv/pyenv), and a guide to installing Conda can be found [here](https://docs.anaconda.com/anaconda/navigator/tutorials/index.html).    
    
 A virtual environment with all prerequisites can be created using pyenv via:    
     
