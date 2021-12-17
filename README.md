@@ -2,7 +2,7 @@
 DRUg Gene SEt Analysis (DRUGSEA) is a command line interface (CLI) tool implemented in python to perform genetically informed drug repositioning using drug gene set analysis using MAGMA.    
 
 ## Prerequisites    
-DRUGSEA was developed using [Python 3.8.5](https://www.python.org/) following packages. Older versions of these packages may work but have not been tested:    
+DRUGSEA was developed using [Python 3.8.5](https://www.python.org/) with the following packages. Older versions of these packages may work but have not been tested:    
    
 [tqdm](https://tqdm.github.io) == 4.62.3   
 [numpy](https://www.numpy.org) == 1.21.1    
