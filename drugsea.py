@@ -1,4 +1,12 @@
-# python script to run drug gene set analysis 
+
+"""
+DRUg Gene SEt Analysis (DRUGSEA) version 1.0
+
+Created: December 12 2021 
+
+Author: Nathaniel Bell (n.y.bell@vu.nl; https://github.com/nybell)
+"""
+
 
 # import packages 
 import os
