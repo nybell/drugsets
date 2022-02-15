@@ -36,7 +36,7 @@ Users can also create a virtual environment in which to run DRUGSEA using [Conda
 A virtual environment with all prerequisites can be created using pyenv via:    
     
 ```
-pyenv virtualenv 3.8.5 venv_drugsea
+pyenv virtualenv 3.8.5 venv_drugsets
 pip install --upgrade pip
 pip install tqdm == 4.62.3
 pip install numpy == 1.21.1
@@ -44,7 +44,7 @@ pip install pandas == 1.3.1
 pip install scipy == 1.7.1
 pip install scikit-learn == 1.0
 pip install matplotlib == 3.4.2
-pyenv activate venv_drugsea
+pyenv activate venv_drugsets
 ```   
 A virtual environment with all prerequisites can be created using Conda via:    
    
