@@ -1,10 +1,10 @@
-# DRUGSEA
-DRUg Gene SEt Analysis (DRUGSEA) is a command line interface (CLI) tool implemented in python to perform genetically informed drug repositioning using drug gene set analysis using MAGMA.
+# DRUGSETS
+DRUg Gene SET AnalysiS (DRUGSETS) is a command line interface (CLI) tool implemented in python to perform genetically informed drug repositioning using drug gene set analysis using MAGMA.
 
 Nathaniel Bell (n.y.bell@vu.nl)
 
 ## Prerequisites    
-DRUGSEA was developed using [Python 3.8.5](https://www.python.org/) with the following packages. Older versions of these packages may work but have not been tested:    
+DRUGSETS was developed using [Python 3.8.5](https://www.python.org/) with the following packages. Older versions of these packages may work but have not been tested:    
    
 [tqdm](https://tqdm.github.io) == 4.62.3   
 [numpy](https://www.numpy.org) == 1.21.1    
@@ -59,11 +59,11 @@ conda activate venv_drugsea
 `$ git clone https://github.com/nybell/drugsea`   
    
 2. Add input data to directory `/DATA/MAGMA_ANNOT/`    
-The only input data needed by the user is the [GENE_RESULTS].genes.raw file from MAGMA gene analysis. ***In order for DRUGSEA to run, users must put their [GENE_RESULTS].genes.raw into the `/DATA/MAGMA_ANNOT/` directory.*** All drug data used in the drug gene set analysis is included in the download, and is stored in the directory `/DATA/GENESETS/`.    
+The only input data needed by the user is the [GENE_RESULTS].genes.raw file from MAGMA gene analysis. ***In order for DRUGSETS to run, users must put their [GENE_RESULTS].genes.raw into the `/DATA/MAGMA_ANNOT/` directory.*** All drug data used in the drug gene set analysis is included in the download, and is stored in the directory `/DATA/GENESETS/`.    
    
 ## Running drug gene set analysis   
     
-Drug gene set analysis is done by executing the script `drugsea.py`. The only flags required for running drug gene set analysis are `--geneassoc`, `--drugsets`, and `--out`. Enrichment analyses can be added using the optional flags `--enrich` and `--nsize`.     
+Drug gene set analysis is done by executing the script `drugsets.py`. The only flags required for running drug gene set analysis are `--geneassoc`, `--drugsets`, and `--out`. Enrichment analyses can be added using the optional flags `--enrich` and `--nsize`.     
 
 * `--geneassoc` or `-g`: specifies the filepath and filename of the user's [GENE_RESULTS].genes.raw file (i.e., `/INSERT/PATH/TO/[GENE_RESULTS].genes.raw`)
 * `--drugsets` or `-d`: specifies which type of drug genesets to use. There are four options:
@@ -82,13 +82,13 @@ Drug gene set analysis is done by executing the script `drugsea.py`. The only fl
     
 ### Example usage    
     
-The following code tests individual drug gene set analysis for associated with schizophrenia. The SCZ_SAMPLE.genes.raw was created using MAGMA and the 2021 schizophrenia GWAS summary statistics, downloaded [here](https://www.med.unc.edu/pgc/download-results/). Additionally, the code tests for ATC III codes for enrichment of drugs that are highly associated with schizophrenia, with a minimum sample size of 5 drugs for each ATC code. Lastly, it specifies to not show output from MAGMA (to see this go to the .log file in the directory `/drugsea/OUTPUT/`.       
+The following code tests individual drug gene set analysis for associated with schizophrenia. The SCZ_SAMPLE.genes.raw was created using MAGMA and the 2021 schizophrenia GWAS summary statistics, downloaded [here](https://www.med.unc.edu/pgc/download-results/). Additionally, the code tests for ATC III codes for enrichment of drugs that are highly associated with schizophrenia, with a minimum sample size of 5 drugs for each ATC code. Lastly, it specifies to not show output from MAGMA (to see this go to the .log file in the directory `/drugsets/OUTPUT/`.       
   
 1. Go to directory      
-`$ cd /PATH/TO/drugsea-main/`     
+`$ cd /PATH/TO/drugsets-main/`     
   
 2. Execute script    
-`python ./drugsea.py --geneassoc SCZ_SAMPLE.genes.raw --drugsets solo --out SCZ --enrich atc --nsize 5 --showlog no`    
+`python ./drugsets.py --geneassoc SCZ_SAMPLE.genes.raw --drugsets solo --out SCZ --enrich atc --nsize 5 --showlog no`    
     
 ## Output    
    
@@ -112,7 +112,7 @@ Both enrichment output files contain the same columns:
 
 # Support   
    
-Any questions, issues, or feedback can be posted to the DRUGSEA repository's issue tracker.   
+Any questions, issues, or feedback can be posted to the DRUGSETS repository's issue tracker.   
 
 
 ## References 
