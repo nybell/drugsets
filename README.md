@@ -71,12 +71,14 @@ Drug gene set analysis is done by executing the script `drugsets.py`. The only f
     * `atc`: drug genesets for each ATC III code category in our data 
     * `moa`: drug genesets for each mechanism of action category in our data 
     * `ind`: drug gene sets for each clinical indication category in our data 
-* `--out` or `-o`: specific prefix for output files
+* `--out` or `-o`: specify prefix for output files
+* `--id` or `-i`: Indicate which gene naming convention is used for your .genes.raw file. Options are "entrez" and "ensembl v105", and "ensembl v92". If you ran MAGMA using FUMA, then use "ensembl92".
 * `--setsize` or `-s`: specfify minimum N for drug gene sets. 
 * `--enrich` or `-e`: test a type of category for enrichment of the drugs with the strongest associations to the phenotype measured using drug gene set analysis. There are three input options:
     * `atc`: test for enrichment by ATC code 
     * `moa`: test for enrichment by mechanism of action 
     * `ind`: test for enrichment by clinical indication 
+    * `all`: test for enrichment of all of the above
 * `--nsize` or `-n`: minimum sample size of drug categories to use when testing for enrichment (e.g., when set to 5, ATC code categories with less than 5 drugs will not be tested for enrichment). 
 * `--showlog` or `-l`: specifies whether or not print the output from MAGMA gene-set analysis to screen. Options are `no` and `yes` (default = `no`) 
     
