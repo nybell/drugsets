@@ -245,33 +245,84 @@ elif args.id == 'ensembl92':
 
 
 # execute gene set analysis 
+
+# individual drug gene set analysis
 if args.drugsets == 'solo':
-    if args.showlog == 'no':
-        df.run_task('magma --gene-results %s --set-annot %s --settings gene-info --out %s' % (annot, solo, output))
-    else:
-        subprocess.run(['magma --gene-results %s --set-annot %s --settings gene-info --out %s' % (annot, solo, output)], \
-            shell = True, check = True)
 
+    if args.conditional == 'no':
+
+        if args.showlog == 'no':
+            df.run_task('magma --gene-results %s --set-annot %s --settings gene-info --out %s' % (annot, solo, output))
+        else:
+            subprocess.run(['magma --gene-results %s --set-annot %s --settings gene-info --out %s' % (annot, solo, output)], \
+                shell = True, check = True)
+
+    elif args.conditional == 'yes':
+        
+        if args.showlog == 'no':
+            df.run_task('magma --gene-results %s --set-annot %s --settings gene-info --model condition=druggable --out %s' % (annot, solo, output))
+        else:
+            subprocess.run(['magma --gene-results %s --set-annot %s --settings gene-info --model condition=druggable --out %s' % (annot, solo, output)], \
+                shell = True, check = True)
+
+# ATC code drug gene set analysis
 elif args.drugsets == 'atc':
-    if args.showlog == 'no':
-        df.run_task('magma --gene-results %s --set-annot %s --settings gene-info --out %s' % (annot, atc, output))
-    else:
-        subprocess.run(['magma --gene-results %s --set-annot %s --settings gene-info --out %s' % (annot, atc, output)], \
-            shell = True, check = True)
 
+    if args.conditional == 'no':
+
+        if args.showlog == 'no':
+            df.run_task('magma --gene-results %s --set-annot %s --settings gene-info --out %s' % (annot, atc, output))
+        else:
+            subprocess.run(['magma --gene-results %s --set-annot %s --settings gene-info --out %s' % (annot, atc, output)], \
+                shell = True, check = True)
+
+    elif args.conditional == 'yes':
+
+        if args.showlog == 'no':
+            df.run_task('magma --gene-results %s --set-annot %s --settings gene-info --model condition=druggable --out %s' % (annot, atc, output))
+        else:
+            subprocess.run(['magma --gene-results %s --set-annot %s --settings gene-info --model condition=druggable --out %s' % (annot, atc, output)], \
+                shell = True, check = True)
+
+# MOA drug gene set analysis
 elif args.drugsets == 'moa':
-    if args.showlog == 'no':
-        df.run_task('magma --gene-results %s --set-annot %s --settings gene-info --out %s' % (annot, moa, output))
-    else:
-        subprocess.run(['magma --gene-results %s --set-annot %s --settings gene-info --out %s' % (annot, moa, output)], \
-            shell = True, check = True)
 
+    if args.conditional =='no':
+
+        if args.showlog == 'no':
+            df.run_task('magma --gene-results %s --set-annot %s --settings gene-info --out %s' % (annot, moa, output))
+        else:
+            subprocess.run(['magma --gene-results %s --set-annot %s --settings gene-info --out %s' % (annot, moa, output)], \
+                shell = True, check = True)
+
+    elif args.conditional == 'yes':
+
+        if args.showlog == 'no':
+            df.run_task('magma --gene-results %s --set-annot %s --settings gene-info --model condition=druggable --out %s' % (annot, moa, output))
+        else:
+            subprocess.run(['magma --gene-results %s --set-annot %s --settings gene-info --model condition=druggable --out %s' % (annot, moa, output)], \
+                shell = True, check = True)
+
+
+# Clinical indication drug gene set analysis 
 elif args.drugsets == 'ind':
-    if args.showlog == 'no':
-        df.run_task('magma --gene-results %s --set-annot %s --settings gene-info --out %s' % (annot, ind, output))
-    else:
-        subprocess.run(['magma --gene-results %s --set-annot %s --settings gene-info --out %s' % (annot, ind, output)], \
-            shell = True, check = True)
+
+    if args.conditional == 'no':
+
+        if args.showlog == 'no':
+            df.run_task('magma --gene-results %s --set-annot %s --settings gene-info --out %s' % (annot, ind, output))
+        else:
+            subprocess.run(['magma --gene-results %s --set-annot %s --settings gene-info --out %s' % (annot, ind, output)], \
+                shell = True, check = True)
+    
+    elif args.conditional == 'yes':
+        
+        if args.showlog == 'no':
+            df.run_task('magma --gene-results %s --set-annot %s --settings gene-info --model condition=druggable --out %s' % (annot, ind, output))
+        else:
+            subprocess.run(['magma --gene-results %s --set-annot %s --settings gene-info --model condition=druggable --out %s' % (annot, ind, output)], \
+                shell = True, check = True)
+
 
 # print log 
 warnings = open(f'{output}.log').read().count('WARNING:')
