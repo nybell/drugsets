@@ -21,7 +21,7 @@ parser.add_argument('--out', '-o', default=None, type=str,
     required=True)
 parser.add_argument('--conditional', '-c', default='no', type=str, choices=['yes','no'],
     help='"yes" will run competitive gene-set analysis in MAGMA while conditioning on a gene set of all druggable genes, "no" will run competitive gene-set analysis without any conditional analysis',
-    required=True)
+    required=False)
 parser.add_argument('--setsize', '-s', default=2, type=int,
     help='Minimum drug gene set size. Minimum size is 2.',
     required=False)
@@ -79,10 +79,11 @@ if args.id == 'entrez':
 
     # set file paths for custom minimum gene set size 
     else:
-        with open( GENESETDIR+'/entrez_genesets.txt') as oldfile, open( GENESETDIR+'/entrez_genesets_min{args.setsize}.txt', 'w') as newfile:
-            for line in oldfile:
-                if len(line.split('\t')) -3 >= int(args.setsize):
-                    newfile.write(line)
+        # with open( GENESETDIR+'/entrez_genesets.txt') as oldfile, open( GENESETDIR+'/entrez_genesets_min{args.setsize}.txt', 'w') as newfile:
+        #     for line in oldfile:
+        #         if len(line.split('\t')) -3 >= int(args.setsize):
+        #             newfile.write(line)
+        df.setsize(GENESETDIR+'/entrez_genesets.txt', args.setsize)
         solo = os.path.normpath(os.path.join(GENESETDIR, 'entrez_genesets_min%d.txt' % args.setsize))
 
         with open( GENESETDIR+'/atc_entrez_sets.txt') as oldfile, open( GENESETDIR+'/atc_entrez_sets_min{args.setsize}.txt', 'w') as newfile:

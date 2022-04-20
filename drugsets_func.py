@@ -21,6 +21,7 @@ def testMWU(data, group, subgroup):     # inputs: data = data; set subgroup = na
     y = y['P']
     return stats.mannwhitneyu(x, y, use_continuity=True, alternative='greater', axis=0, method='auto')
 
+# define function to calculate AUC 
 def drugAUC(data, group, subgroup):
     y_score = data['P']
     y_true = data[group]==subgroup                                      
@@ -29,6 +30,7 @@ def drugAUC(data, group, subgroup):
     roc_auc = auc(fpr,tpr)
     return roc_auc
 
+# define function for enrichment of drug groups within the drug gene set analysis results
 def enrich(data, results, group, nsize):
             # merge MAGMA results data with drug meta data 
             mergedData = data.merge(results, how = "right", left_on = "DRUG", right_on = "VARIABLE")
@@ -73,13 +75,14 @@ def enrich(data, results, group, nsize):
             # convert to csv file
             results = pd.DataFrame(results, columns = ['GROUP', 'MWU','P', 'AUC'])
 
-            # bonferroni correct ATC results 
+            # bonferroni correct ATC results git status
             bonf = 0.05/len(codes)
             resultsBONF = results[results['P'] < bonf]
 
             # return results 
             return results, resultsBONF
 
+# define function to run commands in terminal
 def run_task(cmd):
     with Popen(cmd, shell=True, stdout=PIPE, bufsize=1, universal_newlines=True) as p:
         for b in tqdm(p.stdout):
@@ -89,3 +92,10 @@ def run_task(cmd):
     if p.returncode != 0:
         raise CalledProcessError(p.returncode, p.args)
 
+# define function to create new gene set file with custom size
+def setsize(file, size):
+    new = file.replace('.txt', '_min'+str(size)+'.txt') 
+    with open(file) as oldfile, open(new, 'w') as newfile:
+        for line in oldfile:
+                if len(line.split('\t')) -3 >= int(size):
+                    newfile.write(line)
