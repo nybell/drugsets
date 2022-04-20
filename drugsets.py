@@ -20,7 +20,7 @@ parser.add_argument('--out', '-o', default=None, type=str,
     help='Filename of output.',
     required=True)
 parser.add_argument('--conditional', '-c', default='no', type=str, choices=['yes','no'],
-    help='"yes" will run competitive gene-set analysis in MAGMA while conditioning on a gene set of all druggable genes, "no" will run competitive gene-set analysis without any conditional analysis.',
+    help='"yes" will run competitive gene-set analysis in MAGMA while conditioning on a gene set of all druggable genes, "no" will run competitive gene-set analysis without any conditional analysis',
     required=True)
 parser.add_argument('--setsize', '-s', default=2, type=int,
     help='Minimum drug gene set size. Minimum size is 2.',
