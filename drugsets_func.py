@@ -93,9 +93,17 @@ def run_task(cmd):
         raise CalledProcessError(p.returncode, p.args)
 
 # define function to create new gene set file with custom size
-def setsize(file, size):
-    new = file.replace('.txt', '_min'+str(size)+'.txt') 
-    with open(file) as oldfile, open(new, 'w') as newfile:
+def setsize(path, file, size):
+    
+    # create name for new gene set file 
+    new = file.replace('.txt', '_min'+str(size)+'.txt')
+    new = "/tmp"+new
+
+    # add path
+    new = path+new
+
+    # create file 
+    with open(path+file) as oldfile, open(new, 'w') as newfile:
         for line in oldfile:
                 if len(line.split('\t')) -3 >= int(size):
                     newfile.write(line)

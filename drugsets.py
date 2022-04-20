@@ -79,30 +79,21 @@ if args.id == 'entrez':
 
     # set file paths for custom minimum gene set size 
     else:
-        # with open( GENESETDIR+'/entrez_genesets.txt') as oldfile, open( GENESETDIR+'/entrez_genesets_min{args.setsize}.txt', 'w') as newfile:
-        #     for line in oldfile:
-        #         if len(line.split('\t')) -3 >= int(args.setsize):
-        #             newfile.write(line)
-        df.setsize(GENESETDIR+'/entrez_genesets.txt', args.setsize)
-        solo = os.path.normpath(os.path.join(GENESETDIR, 'entrez_genesets_min%d.txt' % args.setsize))
+        # create new gene set file for individual drug gene sets 
+        df.setsize(GENESETDIR,'/entrez_genesets.txt', args.setsize)
+        solo = os.path.normpath(os.path.join(GENESETDIR, 'tmp/entrez_genesets_min%d.txt' % args.setsize))
 
-        with open( GENESETDIR+'/atc_entrez_sets.txt') as oldfile, open( GENESETDIR+'/atc_entrez_sets_min{args.setsize}.txt', 'w') as newfile:
-            for line in oldfile:
-                if len(line.split('\t')) -3 >= int(args.setsize):
-                    newfile.write(line)
-        atc = os.path.normpath(os.path.join(GENESETDIR, 'atc_entrez_sets_min%d.txt' % args.setsize))
+        # create new gene set file for ATC III code gene sets 
+        df.setsize(GENESETDIR,'/atc_entrez_sets.txt', args.setsize)
+        atc = os.path.normpath(os.path.join(GENESETDIR, 'tmp/atc_entrez_sets_min%d.txt' % args.setsize))
 
-        with open( GENESETDIR+'/moa_entrez_sets.txt') as oldfile, open( GENESETDIR+'/moa_entrez_sets_min{args.setsize}.txt', 'w') as newfile:
-            for line in oldfile:
-                if len(line.split('\t')) -3 >= int(args.setsize):
-                    newfile.write(line)
-        moa = os.path.normpath(os.path.join(GENESETDIR, 'moa_entrez_sets_min%d.txt' % args.setsize))
+        # create new gene set file for MOA gene sets 
+        df.setsize(GENESETDIR,'/moa_entrez_sets.txt', args.setsize)
+        moa = os.path.normpath(os.path.join(GENESETDIR, 'tmp/moa_entrez_sets_min%d.txt' % args.setsize))
 
-        with open( GENESETDIR+'/ind_entrez_sets.txt') as oldfile, open( GENESETDIR+'/ind_entrez_sets_min{args.setsize}.txt', 'w') as newfile:
-            for line in oldfile:
-                if len(line.split('\t')) -3 >= int(args.setsize):
-                    newfile.write(line)
-        ind = os.path.normpath(os.path.join(GENESETDIR, 'ind_entrez_sets_min%d.txt' % args.setsize))
+        # create new gene set file for clinical indication gene sets 
+        df.setsize(GENESETDIR,'/ind_entrez_sets.txt', args.setsize)
+        ind = os.path.normpath(os.path.join(GENESETDIR, 'tmp/ind_entrez_sets_min%d.txt' % args.setsize))
 
 # set filepaths and minimum gene sets size if gene's are named using ENSEMBL
 elif args.id == 'ensembl':
