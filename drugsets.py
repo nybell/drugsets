@@ -19,13 +19,16 @@ parser.add_argument('--drugsets', '-d', default='solo', type=str, choices=['solo
 parser.add_argument('--out', '-o', default=None, type=str,
     help='Filename of output.',
     required=True)
+parser.add_argument('--conditional', '-c', default='no', type=str, choices=['yes','no'],
+    help='"yes" will run competitive gene-set analysis in MAGMA while conditioning on a gene set of all druggable genes, "no" will run competitive gene-set analysis without any conditional analysis.',
+    required=True)
 parser.add_argument('--setsize', '-s', default=2, type=int,
     help='Minimum drug gene set size. Minimum size is 2.',
     required=False)
 parser.add_argument('--id', '-i', default='entrez', type=str, choices=['entrez', 'ensembl', 'ensembl92'],
     help='Indicate which gene naming convention is used for your genes.raw file. Options are "entrez" and "ensembl v105", and "ensembl v92". \
         If you ran MAGMA using FUMA, then use "ensembl92"',
-    required=False)
+    required=False)   
 parser.add_argument('--enrich', '-e', default=None, type=str, choices=['atc', 'moa', 'ind', 'all'],
     help='Test drug category for enrichment.',
     required=False)
