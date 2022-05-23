@@ -19,7 +19,7 @@ parser.add_argument('--drugsets', '-d', default='solo', type=str, choices=['solo
 parser.add_argument('--out', '-o', default=None, type=str,
     help='Filename of output.',
     required=True)
-parser.add_argument('--conditional', '-c', default='no', type=str, choices=['yes','no'],
+parser.add_argument('--conditional', '-c', default='yes', type=str, choices=['yes','no'],
     help='"yes" will run competitive gene-set analysis in MAGMA while conditioning on a gene set of all druggable genes, "no" will run competitive gene-set analysis without any conditional analysis',
     required=False)
 parser.add_argument('--setsize', '-s', default=2, type=int,
