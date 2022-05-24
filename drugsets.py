@@ -343,7 +343,7 @@ if args.enrich is not None:
     if args.drugsets == 'solo':
         
         #print 
-        print('Running enrichment analysis...\n\n')
+        print('Running %s enrichment analysis...\n\n' % (args.enrich.upper()))
 
         # set file path for .gsa.out results file
         gsa = (output+'.gsa.out')
@@ -352,134 +352,28 @@ if args.enrich is not None:
         gsa_results = pd.read_csv(gsa, delimiter= "\s+", comment='#') 
 
         # load drug meta data
-        meta = pd.read_pickle(metapath)              
-
-        # ----- ATC CODE ENRICHMENT ----- #
-
-        if args.enrich in ('atc','all'):
+        # meta = pd.read_pickle(metapath)              
             
-            # print
-            print("ATC enrichment")
+        # set file path for gsa results
+        gsa_path = OUTDIR+'/%s.gsa.out' % args.out
 
-            # explode atc
-            meta_atc = meta[meta['ATC3'].notna()]
-            meta_atc = meta_atc.explode('ATC3')
-            
-            # test for enrichment of ATC categories 
-            resultsATC, resultsBONFatc = df.enrich(meta_atc, gsa_results, 'atc', args.nsize)
+        # set full file paths for .raw file, gene set file
+        full = os.path.dirname(os.path.abspath(__file__)) + '/'
 
-            # save all results 
-            print('\n\tSaving all results to %s' % (OUTDIR+'/enrich.atc.txt'))            # print 
-            resultsPATHatc = os.path.normpath(os.path.join(OUTDIR, 'enrich.atc.txt'))        # set filepath
-            resultsATC.to_csv(resultsPATHatc, index = False, sep = '\t')                        # save 
+        # compute covariance 
+        print('\tComputing correlation matrix...')
+        df.run_task_silent('Rscript --vanilla %s %s %s %s %s %s' % (full+'compute_corrs.R', (full+annot), (full+solo), (full+gsa_path), args.out, full)) 
 
-            # add comments
-            with open(resultsPATHatc, 'w') as f:
-                f.write('# Group = drug category tested for enrichment\n')
-                f.write('# MWU = Wilcoxon Mann Whitney U statistic\n')
-                f.write('# P = P value from Wilcoxon Mann Whitney U test\n')
-                f.write('# AUC = area under the curve\n\n')
-            resultsATC.to_csv(resultsPATHatc, index = False, sep = '\t', mode = 'a')
+        # define filepath to set.corrs.rdata and to metadata.rdata file
+        corrdata = full+'%s_setcorrs.rdata' % args.out
+        metaRdata = full+'DATA/metadata.rdata'
 
-            # save bonferroni corrected results 
-            if resultsBONFatc.empty == False:
+        # compute dependent linear regression
+        print('\tRunning dependent linear regression model...')
+        df.run_task_silent('Rscript --vanilla %s %s %s %s %s %s %s' % (full+'compute_lnreg.R', corrdata, metaRdata, args.enrich.lower(), args.nsize, args.out, full+OUTDIR))
 
-                #print
-                print('\tSaving Bonferroni significant results to %s\n' % (OUTDIR+'/enrich.bonf.atc.txt'))      # print
-                bonfPATHatc = os.path.normpath(os.path.join(OUTDIR, 'enrich.bonf.atc.txt'))                        # set filepath
-                resultsBONFatc.to_csv(bonfPATHatc, index = False, sep = '\t')                                         # save 
-
-                with open(bonfPATHatc, 'w') as f:
-                    f.write('# Group = drug category tested for enrichment\n')
-                    f.write('# MWU = Wilcoxon Mann Whitney U statistic\n')
-                    f.write('# P = P value from Wilcoxon Mann Whitney U test\n')
-                    f.write('# AUC = area under the curve\n\n')
-                resultsBONFatc.to_csv(bonfPATHatc, index = False, sep = '\t', mode = 'a')
-        
-
-        # ---- CLINICAL INDICATION ENRICHMENT ----- #         
-
-        if args.enrich in ('ind','all'):
-
-            # print
-            print('Clinical indication enrichment')
-
-            # explode indication
-            meta_ind = meta.explode('indication')
-
-            # test for enrichment of ATC categories 
-            resultsIND, resultsBONFind = df.enrich(meta_ind, gsa_results, 'ind', args.nsize)
-
-            # save all results 
-            print('\n\tSaving all results to %s' % (OUTDIR+'/enrich.ind.txt'))            # print 
-            resultsPATHind = os.path.normpath(os.path.join(OUTDIR, 'enrich.ind.txt'))        # set filepath
-            resultsIND.to_csv(resultsPATHind, index = False, sep = '\t')                        # save 
-
-            # add comments
-            with open(resultsPATHind, 'w') as f:
-                f.write('# Group = drug category tested for enrichment\n')
-                f.write('# MWU = Wilcoxon Mann Whitney U statistic\n')
-                f.write('# P = P value from Wilcoxon Mann Whitney U test\n')
-                f.write('# AUC = area under the curve\n\n')
-            resultsIND.to_csv(resultsPATHind, index = False, sep = '\t', mode = 'a')
-
-            # save bonferroni corrected results 
-            if resultsBONFind.empty == False:
-
-                #print
-                print('\tSaving Bonferroni significant results to %s\n' % (OUTDIR+'/enrich.bonf.ind.txt'))                 # print
-                bonfPATHind = os.path.normpath(os.path.join(OUTDIR, 'enrich.bonf.ind.txt'))                                   # set filepath
-                resultsBONFind.to_csv(bonfPATHind, index = False, sep = '\t')                                                    # save 
-
-                # add comments 
-                with open(bonfPATHind, 'w') as f:
-                    f.write('# Group = drug category tested for enrichment\n')
-                    f.write('# MWU = Wilcoxon Mann Whitney U statistic\n')
-                    f.write('# P = P value from Wilcoxon Mann Whitney U test\n')
-                    f.write('# AUC = area under the curve\n\n')
-                resultsBONFind.to_csv(bonfPATHind, index = False, sep = '\t', mode = 'a')
-
-        # ---- MOA ENRICHMENT ----- #         
-
-        if args.enrich in ('moa','all'):
-
-            # print
-            print("Mechanism of action enrichment")
-
-            # explode moa
-            meta_moa = meta.explode('moa')
-
-            # test for enrichment of ATC categories 
-            resultsMOA, resultsBONFmoa = df.enrich(meta_moa, gsa_results, 'moa', args.nsize)
-            
-            # save all results 
-            print('\n\tSaving all results to %s' % (OUTDIR+'/enrich.moa.txt'))                        # print 
-            resultsPATHmoa = os.path.normpath(os.path.join(OUTDIR, 'enrich.moa.txt'))                    # set filepath
-            resultsMOA.to_csv(resultsPATHmoa, index = False, sep = '\t')                                    # save 
-
-            # add comments
-            with open(resultsPATHmoa, 'w') as f:
-                f.write('# Group = drug category tested for enrichment\n')
-                f.write('# MWU = Wilcoxon Mann Whitney U statistic\n')
-                f.write('# P = P value from Wilcoxon Mann Whitney U test\n')
-                f.write('# AUC = area under the curve\n\n')
-            resultsMOA.to_csv(resultsPATHmoa, index = False, sep = '\t', mode = 'a')
-
-            # save bonferroni corrected results 
-            if resultsBONFmoa.empty == False:
-
-                #print
-                print('\tSaving Bonferroni significant results to %s\n' % (OUTDIR+'/enrich.bonf.moa.txt'))                 # print
-                bonfPATHmoa = os.path.normpath(os.path.join(OUTDIR, 'enrich.bonf.moa.txt'))                                   # set filepath
-                resultsBONFmoa.to_csv(bonfPATHmoa, index = False, sep = '\t')                                                    # save 
-
-                # add comments 
-                with open(bonfPATHmoa, 'w') as f:
-                    f.write('# Group = drug category tested for enrichment\n')
-                    f.write('# MWU = Wilcoxon Mann Whitney U statistic\n')
-                    f.write('# P = P value from Wilcoxon Mann Whitney U test\n')
-                    f.write('# AUC = area under the curve\n\n')
-                resultsBONFmoa.to_csv(bonfPATHmoa, index = False, sep = '\t', mode = 'a')
+        # remove correlation matrix file
+        df.run_task_silent('rm %s' % (full+args.out+'_setcorrs.rdata'))
 
         # remove new gene set files if created new 
         # if args.setsize == 2:
@@ -488,7 +382,7 @@ if args.enrich is not None:
         #     subprocess.run('rm %s/*min%d.txt' % (GENESETDIR, args.setsize), shell=True)
 
         # print finished 
-        print('\n\tEnrichment analysis finished.\n')
+        print('\nEnrichment analysis finished.\n')
 
     else: 
         print('To test for enrichment "-drugsets" must be set to "solo".')
