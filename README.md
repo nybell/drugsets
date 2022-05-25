@@ -4,16 +4,20 @@ DRUg Gene SET AnalysiS (DRUGSETS) is a command line interface (CLI) tool impleme
 Nathaniel Bell (n.y.bell@vu.nl)
 
 ## Prerequisites    
-DRUGSETS was developed using [Python 3.8.5](https://www.python.org/) with the following packages. Older versions of these packages may work but have not been tested:    
-   
+DRUGSETS was developed using [Python 3.8.5](https://www.python.org/) and [R](https://www.r-project.org/) with the following packages. Older versions of these packages may work but have not been tested:    
+
+Python
 [tqdm](https://tqdm.github.io) == 4.62.3   
 [numpy](https://www.numpy.org) == 1.21.1    
 [pandas](https://pandas.pydata.org) == 1.3.1   
 [scipy](https://www.scipy.org) == 1.7.1   
 [scikit-learn](http://scikit-learn.org) == 1.0   
-[matplotlib](https://matplotlib.org) == 3.4.2   
+
+R
+[tidyr](https://tidyr.tidyverse.org/) == 1.1.3
+[dyplr](https://dplyr.tidyverse.org/) == 1.0.7
    
-Additionally, the [MAGMA](https://ctg.cncr.nl/software/magma)[^1] software tool for gene and gene-set analysis is needed to run DRUGSEA. Full documentation of MAGMA can be found [here](https://ctg.cncr.nl/software/MAGMA/doc/manual_v1.09.pdf). MAGMA needs to be able to be executed globally, which can be setup by adding the following line to the end of the user's .bashrc or .zshrc file.    
+Additionally, the [MAGMA](https://ctg.cncr.nl/software/magma)[^1] software tool for gene and gene-set analysis is needed to run DRUGSETS. Full documentation of MAGMA can be found [here](https://ctg.cncr.nl/software/MAGMA/doc/manual_v1.09.pdf). MAGMA needs to be able to be executed globally, which can be setup by adding the following line to the end of the user's .bashrc or .zshrc file.    
    
 `export PATH=$PATH:/INSERT/PATH/TO/FILE/magma_v1.09b_mac/`   
    
@@ -52,6 +56,13 @@ A virtual environment with all prerequisites can be created using Conda via:
 conda create --name venv_drugsea python=3.8.5 tqdm=4.62.3 numpy=1.21.1 pandas=1.3.1 scipy=1.7.1 scikit-learn=1.0 matplotlib=3.4.2
 conda activate venv_drugsea
 ```   
+
+The necessary R packages can be installed using the following code:
+
+```
+require(remotes)
+install_version("tidyr", version = "1.1.3", repos = "http://cran.us.r-project.org")
+install_version("dplyr", version = "1.0.7", repos = "http://cran.us.r-project.org")
    
 ## Setup & Input data     
    
@@ -72,25 +83,25 @@ Drug gene set analysis is done by executing the script `drugsets.py`. The only f
     * `moa`: drug genesets for each mechanism of action category in our data 
     * `ind`: drug gene sets for each clinical indication category in our data 
 * `--out` or `-o`: specify prefix for output files
+* `--conditional` or `-c`: Specifies whether or not to run competitive gene-set analysis while conditioning on a gene set of all druggable genes. Input options are `yes` and `no`. Default is `yes`.
 * `--id` or `-i`: Indicate which gene naming convention is used for your .genes.raw file. Options are "entrez" and "ensembl v105", and "ensembl v92". If you ran MAGMA using FUMA, then use "ensembl92".
 * `--setsize` or `-s`: specfify minimum N for drug gene sets. 
-* `--enrich` or `-e`: test a type of category for enrichment of the drugs with the strongest associations to the phenotype measured using drug gene set analysis. There are three input options:
-    * `atc`: test for enrichment by ATC code 
-    * `moa`: test for enrichment by mechanism of action 
-    * `ind`: test for enrichment by clinical indication 
-    * `all`: test for enrichment of all of the above
+* `--enrich` or `-e`: tests all groups in the given category to see if drugs in each group have higher Z-statistics from the drug gene-set analysis than drugs not in the group (e.g., "do the drugs with ATC code N03A have higher Z-statistics from the drug gene-set analysis than drugs without ATC CODE N03A?"). Tests all drugs in the category type that is input (e.g., for input 'atc', all ATC code groups will be tested) and then is Bonferroni corrected for the number of groups tested. There are three input options:
+    * `atc`: test drugs grouped by ATC code 
+    * `moa`: test drugs grouped by mechanism of action 
+    * `ind`: test drugs grouped by clinical indication 
 * `--nsize` or `-n`: minimum sample size of drug categories to use when testing for enrichment (e.g., when set to 5, ATC code categories with less than 5 drugs will not be tested for enrichment). 
 * `--showlog` or `-l`: specifies whether or not print the output from MAGMA gene-set analysis to screen. Options are `no` and `yes` (default = `no`) 
     
 ### Example usage    
     
-The following code tests individual drug gene set analysis for associated with schizophrenia. The SCZ_SAMPLE.genes.raw was created using MAGMA and the 2021 schizophrenia GWAS summary statistics, downloaded [here](https://www.med.unc.edu/pgc/download-results/). Additionally, the code tests for ATC III codes for enrichment of drugs that are highly associated with schizophrenia, with a minimum sample size of 5 drugs for each ATC code. Lastly, it specifies to not show output from MAGMA (to see this go to the .log file in the directory `/drugsets/OUTPUT/`.       
+The following code tests individual drug gene set analysis for associated with schizophrenia. The SCZ_SAMPLE.genes.raw was created using MAGMA and the 2021 schizophrenia GWAS summary statistics, downloaded [here](https://www.med.unc.edu/pgc/download-results/). Additionally, the code tests for ATC III codes for enrichment of drugs that are highly associated with schizophrenia, with a minimum sample size of 5 drugs for each ATC code. Lastly, it specifies to not show output from MAGMA (to see this go to the .log file in the directory `/drugsets-main/OUTPUT/`.       
   
 1. Go to directory      
 `$ cd /PATH/TO/drugsets-main/`     
   
 2. Execute script    
-`python ./drugsets.py --geneassoc SCZ_SAMPLE.genes.raw --drugsets solo --out SCZ --enrich atc --nsize 5 --showlog no`    
+`python ./drugsets.py --geneassoc SCZ_SAMPLE.genes.raw --drugsets solo --out SCZ --conditional yes --setsize 5 --enrich atc --nsize 5 --showlog no`    
     
 ## Output    
    
@@ -102,14 +113,15 @@ The formats of the output files from the drug gene set analysis in MAGMA (.gsa.o
 * `.gsa.sets.genes.out` contains information on significant drug gene sets after Bonferroni correction, and the genes in each gene set  
     
 #### Enrichment analysis 
-* `enrich.OUT.txt` contains the results from the enrichment analysis for every drug category tested
-* `enrich.bonf.OUT.txt` contains the results from the enrichment analysis for drug significant after Bonferroni correction   
+* `lnreg.[GROUP].[OUT].csv` contains the results from the enrichment analysis for every drug category tested
+* `lnreg.BONF.[GROUP].[OUT].csv` contains the results from the enrichment analysis for drug significant after Bonferroni correction   
   
 Both enrichment output files contain the same columns:
 * `GROUP` the drug category tested 
-* `MWU` Wilcoxon Mann Whitney U statistic from a one-tailed test whether the p-values in the group are lower then the p-values for drugs not in the group
-* `P` p-value from the Wilcoxon Mann Whitney U test
-* `AUC` Area under the enrichment curve for drugs in the group tested for enrichment, as described [here](https://www.nature.com/articles/s41598-017-12325-3)
+* `BETA` Beta value from the dependent linear regression model of the effect of group (e.g., which ATC III code a drug has) on the Z-statistic of the drug from the drug gene-set analysis run in MAGMA
+* `SIGMA` Sigma value from the dependent linear regression model
+* `T` Test statistic from the hypothesis H0: Bgroup = 0 (i.e., testing the null hypothesis that the Beta for a drug group is equal to 0)
+* `P` Two-tailed p-value from the T statistic
 
 
 # Support   
