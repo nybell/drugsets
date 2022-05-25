@@ -6,7 +6,7 @@ Nathaniel Bell (n.y.bell@vu.nl)
 ## Prerequisites    
 DRUGSETS was developed using [Python 3.8.5](https://www.python.org/) and [R](https://www.r-project.org/) with the following packages. Older versions of these packages may work but have not been tested:    
 
-Python
+Python  
 [tqdm](https://tqdm.github.io) == 4.62.3   
 [numpy](https://www.numpy.org) == 1.21.1    
 [pandas](https://pandas.pydata.org) == 1.3.1   
