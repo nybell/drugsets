@@ -67,7 +67,7 @@ ones <- as.vector(rep(c(1),each=length(merged$data)))
 size <- as.vector(as.numeric(merged$size))
 
 # define empty data frame 
-results <- data.frame(matrix(NA, nrow = 0, ncol = 4))
+results <- data.frame(matrix(NA, nrow = 0, ncol = 5))
 
 # loop through all unique ATC codes in data set and run linear regression
 for (code in codes) {
@@ -110,7 +110,14 @@ bonf <- 0.05 / nrow(results)
 results_bonf <- subset(results, P < bonf)
 
 # save results 
-write.table(results, sprintf('%s/lnreg_results_%s_%s.csv', args[6], args[3], args[5]), row.names = FALSE, sep=',', quote = FALSE)   # raw 
-write.table(results_bonf, sprintf('%s/lnreg_resultsBONF_%s_%s.csv',args[6], args[3], args[5]), row.names = FALSE, sep=',', quote = FALSE)  # Bonf
+write.table(results, sprintf('%s/lnreg.%s.%s.csv', args[6], args[3], args[5]), row.names = FALSE, sep=',', quote = FALSE)   # raw 
+
+if (nrow(results_bonf) > 0) {
+  write.table(results_bonf, sprintf('%s/lnreg.BONF.%s.%s.csv',args[6], args[3], args[5]), row.names = FALSE, sep=',', quote = FALSE)  # Bonf
+}
+
 
 ##### ----- END ----- #####
+
+
+
