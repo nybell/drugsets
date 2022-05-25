@@ -13,9 +13,9 @@ Python
 [scipy](https://www.scipy.org) == 1.7.1   
 [scikit-learn](http://scikit-learn.org) == 1.0   
 
-R
-[tidyr](https://tidyr.tidyverse.org/) == 1.1.3
-[dyplr](https://dplyr.tidyverse.org/) == 1.0.7
+R  
+[tidyr](https://tidyr.tidyverse.org/) == 1.1.3  
+[dyplr](https://dplyr.tidyverse.org/) == 1.0.7  
    
 Additionally, the [MAGMA](https://ctg.cncr.nl/software/magma)[^1] software tool for gene and gene-set analysis is needed to run DRUGSETS. Full documentation of MAGMA can be found [here](https://ctg.cncr.nl/software/MAGMA/doc/manual_v1.09.pdf). MAGMA needs to be able to be executed globally, which can be setup by adding the following line to the end of the user's .bashrc or .zshrc file.    
    
