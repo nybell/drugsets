@@ -10,7 +10,6 @@ args = commandArgs(trailingOnly = TRUE)  # setcorrs.rdata  (1), metadata (2), gr
 # library
 library(tidyr)
 library(dplyr)
-library(rrtable)
 
 # load data from compute_corrs.r
 load(args[1])
