@@ -84,7 +84,7 @@ Drug gene set analysis is done by executing the script `drugsets.py`. The only f
     * `moa`: drug genesets for each mechanism of action category in our data 
     * `ind`: drug gene sets for each clinical indication category in our data 
 * `--out` or `-o`: specify prefix for output files
-* `--conditional` or `-c`: Specifies whether or not to run competitive gene-set analysis while conditioning on a gene set of all druggable genes. Input options are `yes` and `no`. Default is `yes`.
+* `--conditional` or `-c`: Specifies whether or not to run competitive gene-set analysis while conditioning on a gene set of all druggable genes. Input options are `yes` and `no` (default = `yes`).
 * `--id` or `-i`: Indicate which gene naming convention is used for your .genes.raw file. Options are "entrez" and "ensembl v105", and "ensembl v92". If you ran MAGMA using FUMA, then use "ensembl92".
 * `--setsize` or `-s`: specfify minimum N for drug gene sets. 
 * `--enrich` or `-e`: tests all groups in the given category to see if drugs in each group have higher Z-statistics from the drug gene-set analysis than drugs not in the group (e.g., "do the drugs with ATC code N03A have higher Z-statistics from the drug gene-set analysis than drugs without ATC CODE N03A?"). Tests all drugs in the category type that is input (e.g., for input 'atc', all ATC code groups will be tested) and then is Bonferroni corrected for the number of groups tested. There are three input options:
