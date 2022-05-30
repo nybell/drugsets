@@ -371,6 +371,9 @@ print('Drug gene set analysis finished.\n')
 if args.enrich is not None:
 
     if (args.drugsets == 'solo' or args.drugsets == 'all'):
+
+        # set full file paths for .raw file, gene set file
+        full = os.path.dirname(os.path.abspath(__file__)) + '/'
         
         #print 
         print('Running %s enrichment analysis...\n\n' % (args.enrich.upper()))
@@ -382,17 +385,14 @@ if args.enrich is not None:
         gsa_results = pd.read_csv(gsa, delimiter= "\s+", comment='#')               
             
         # set file path for gsa results
-        gsa_path = OUTDIR+'/%s.gsa.out' % (args.out+'_SOLO')
-
-        # set full file paths for .raw file, gene set file
-        full = os.path.dirname(os.path.abspath(__file__)) + '/'
+        gsa_path = 'OUTPUT/%s.gsa.out' % (args.out+'_SOLO')
 
         # compute covariance 
         print('\tComputing correlation matrix...')
-        df.run_task_silent('Rscript --vanilla %s %s %s %s %s %s' % (full+'compute_corrs.R', (full+annot), (full+solo), (full+gsa_path), args.out, full)) 
+        df.run_task_silent('Rscript --vanilla %s %s %s %s %s %s' % (full+'compute_corrs.R', annot, solo, (full+gsa_path), ('/'+args.out), full)) 
 
         # define filepath to set.corrs.rdata and to metadata.rdata file
-        corrdata = full+'%s_setcorrs.rdata' % args.out
+        corrdata = full+'OUTPUT/%s_setcorrs.rdata' % args.out
         metaRdata = full+'DATA/metadata.rdata'
 
         # run either one group or all 
@@ -401,7 +401,7 @@ if args.enrich is not None:
             
             # compute dependent linear regression
             print('\tRunning dependent linear regression model...')
-            df.run_task_silent('Rscript --vanilla %s %s %s %s %s %s %s' % (full+'compute_lnreg.R', corrdata, metaRdata, args.enrich.lower(), args.nsize, args.out, full+OUTDIR))
+            df.run_task_silent('Rscript --vanilla %s %s %s %s %s %s %s' % (full+'compute_lnreg.R', corrdata, metaRdata, args.enrich.lower(), args.nsize, args.out, OUTDIR))
 
         elif args.enrich == 'all':
             
@@ -413,10 +413,10 @@ if args.enrich is not None:
 
                 # compute dependent linear regression
                 print('\tRunning dependent linear regression model for %s groups...' % g.upper())
-                df.run_task_silent('Rscript --vanilla %s %s %s %s %s %s %s' % (full+'compute_lnreg.R', corrdata, metaRdata, g, args.nsize, (args.out+'_'+g.upper()), full+OUTDIR))
+                df.run_task_silent('Rscript --vanilla %s %s %s %s %s %s %s' % (full+'compute_lnreg.R', corrdata, metaRdata, g, args.nsize, (args.out+'_'+g.upper()), OUTDIR))
 
         # remove correlation matrix file
-        df.run_task_silent('rm %s' % (full+args.out+'_setcorrs.rdata'))
+        df.run_task_silent('rm %s' % (OUTDIR+'/'+args.out+'_setcorrs.rdata'))
 
         # remove new gene set files if created new 
         # if args.setsize == 2:
