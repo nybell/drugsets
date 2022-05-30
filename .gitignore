@@ -137,4 +137,7 @@ DATA/GENESETS/tmp/
 OUTPUT/.DS_Store
 OUTPUT/.Rhistory
 setcorrs_dg/
+OUTPUT/
+DATA/MAGMA_ANNOT/dgsa_input/
+
 
