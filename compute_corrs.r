@@ -53,6 +53,7 @@ project.data = function(data) {
 
 
 residualize = cbind(data.matrix(raw.info[,c("nsnps", "nparam", "nsamp")]), 1/raw.info$mac)
+residualize = residualize[,apply(residualize, 2, var) > 0]
 residualize = cbind(1, scale(cbind(residualize, log(residualize))))
 residualize = project.data(residualize)
 
