@@ -2,9 +2,9 @@
 
 args = commandArgs(trailingOnly = TRUE)  # setcorrs.rdata  (1), metadata (2), group tested (3), setsize (4), out (5), outdir (6) 
 
-# for testing purposes
-# setwd('~/drugsets/setcorrs_dg/')
-# load('setcorrs.rdata')
+# # for testing purposes
+# setwd('~/drugsets/')
+# load('test_t2d.rdata')
 # load('/Users/nyb/drugsets/DATA/metadata.rdata')
 
 # library
@@ -75,8 +75,8 @@ for (code in codes) {
   # get indices of group 
   ind <- which(sapply(merged$data, function(y) code %in% y))            # get group indices
   
-  if (length(ind) >= as.numeric(args[4])) {   # args[4]
-    
+  if (length(ind) >= as.numeric(5)) {   # args[4]
+
     # binarize group
     merged$bin <- 0                                                  # set all values equal to 0
     merged$bin[ind] <- 1                                             # set drugs in group equal to 1
@@ -103,6 +103,7 @@ for (code in codes) {
 
 # add column names to results
 colnames(results) <- c('GROUP','BETA','SIGMA','T','P')
+results <- results %>% mutate_at(c('BETA','SIGMA','T','P'), as.numeric)
 results <- results[order(results$P),]
 
 # Bonferroni correct results
