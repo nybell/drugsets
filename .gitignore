@@ -140,4 +140,6 @@ setcorrs_dg/
 OUTPUT/
 DATA/MAGMA_ANNOT/dgsa_input/
 .Rhistory
-
+DATA/atc_groups.csv
+DATA/ind_groups.csv
+DATA/moa_groups.csv
