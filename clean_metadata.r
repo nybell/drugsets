@@ -1,7 +1,7 @@
 ##### ----- CLEAN METADATA FILE ----- #####
 
 # set working directory 
-setwd('~/drugsets/setcorrs_dg/')
+setwd('~/drugsets/DATA/')
 
 # library
 library(tidyr)
@@ -40,6 +40,23 @@ tmp <- meta %>% separate_rows(moa, sep = ',')
 tmp <- subset(tmp, is.na(moa) == FALSE & moa != "")
 codesMoa <- unique(tmp$moa)
 rm(tmp)
+
+# create and save tables of ATC, MOA and IND drug groups (i.e., which drugs belong to which groups)
+
+# atc
+atc_data <- meta %>% separate_rows(atc) %>% drop_na(atc)
+atc_data <- aggregate(DRUG ~ atc, atc_data, FUN = paste, collapse=", ")
+write.csv(atc_data, 'atc_groups.csv', row.names = FALSE)
+
+# moa
+moa_data <- meta %>% separate_rows(moa) %>% drop_na(moa)
+moa_data <- aggregate(DRUG ~ moa, moa_data, FUN = paste, collapse=", ")
+write.csv(moa_data, 'moa_groups.csv', row.names = FALSE)
+
+# ind
+ind_data <- meta %>% separate_rows(indication) %>% drop_na(indication)
+ind_data <- aggregate(DRUG ~ indication, ind_data, FUN = paste, collapse=", ")
+write.csv(ind_data, 'ind_groups.csv', row.names = FALSE)
 
 
 # split strings into vectors
