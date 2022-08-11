@@ -47,7 +47,7 @@ lnreg_dep <- function(X, set.corrs.inv, y) {
   B <- W %*% Xt %*% set.corrs.inv %*% y      # compute beta 
   sigma <- t(y - (X %*% B)) %*% set.corrs.inv %*% (y - (X %*% B)) / (N - K)     # compute sigma squared
   t <- B[2] / sqrt(sigma * W[2,2])     # compute test statistic 
-  p <- pt(abs(t), (N - K), lower.tail = F)*2            # compute two tailed p-value for test stat 
+  p <- pt(t, (N - K), lower.tail = F)            # compute two tailed p-value for test stat: add abs(), *2 for two-tailed
   
   results <- c(B[2],sigma,t,p)    # save results
   
