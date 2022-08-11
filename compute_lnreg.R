@@ -10,6 +10,7 @@ args = commandArgs(trailingOnly = TRUE)  # setcorrs.rdata  (1), metadata (2), gr
 # library
 library(tidyr)
 library(dplyr)
+library(FSA)
 
 # load data from compute_corrs.r
 load(args[1])
@@ -106,17 +107,33 @@ colnames(results) <- c('GROUP','BETA','SIGMA','T','P')
 results <- results %>% mutate_at(c('BETA','SIGMA','T','P'), as.numeric)
 results <- results[order(results$P),]
 
-# Bonferroni correct results
-bonf <- 0.05 / nrow(results)
-results_bonf <- subset(results, P < bonf)
+if (args[7] == 'bonf') {
+  
+  # Bonferroni correction
+  bonf <- 0.05 / nrow(results)
+  results_bonf <- subset(results, P < bonf)
+  
+} else if (args[7] == 'fdr') {
+  
+  # FDR correction
+  results$fdrP <- p.adjust(results$P, method = 'BH')
+  results_fdr <- subset(results, fdrP < 0.05)
+  
+}
 
 # save results 
 write.table(results, sprintf('%s/lnreg.%s.%s.csv', args[6], args[3], args[5]), row.names = FALSE, sep=',', quote = FALSE)   # raw 
 
-if (nrow(results_bonf) > 0) {
-  write.table(results_bonf, sprintf('%s/lnreg.BONF.%s.%s.csv',args[6], args[3], args[5]), row.names = FALSE, sep=',', quote = FALSE)  # Bonf
+# save corrected results
+if (args[7] == 'bonf') {
+  if (nrow(results_bonf) > 0) {
+    write.table(results_bonf, sprintf('%s/lnreg.%s.%s.%s.csv',args[6], args[7], args[3], args[5]), row.names = FALSE, sep=',', quote = FALSE)  # Bonf
+  }
+} else if (args[7] == 'fdr') {
+  if (nrow(results_fdr) > 0) {
+    write.table(results_fdr, sprintf('%s/lnreg.%s.%s.%s.csv',args[6], args[7], args[3], args[5]), row.names = FALSE, sep=',', quote = FALSE)  # Bonf
+  }
 }
-
 
 ##### ----- END ----- #####
 

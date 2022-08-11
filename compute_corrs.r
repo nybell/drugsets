@@ -103,5 +103,5 @@ set.info = data.frame(
 	stringsAsFactors=F
 )
 
-save(set.info, set.corrs, set.corrs.inv, file=sprintf("%s%s%s_setcorrs.rdata", args[5],'OUTPUT',args[4]))
+save(set.info, set.corrs, set.corrs.inv, file=sprintf("%s%s_setcorrs.rdata", args[5],args[4]))
 

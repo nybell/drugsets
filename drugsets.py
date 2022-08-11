@@ -39,6 +39,9 @@ parser.add_argument('--enrich', '-e', default=None, type=str, choices=['atc', 'm
 parser.add_argument('--nsize', '-n', default=5, type=float,
     help = 'Set minimum sample size for drug categories being tested for enrichment.',
     required=False)
+parser.add_argument('--correct', '-p', default='bonf', type=str, choices=['bonf', 'fdr'],
+    help = 'Select correction to be used for multiple testing for drug group enrichment: Bonferroni or FDR',
+    required=False)
 
 # parse arguments 
 args = parser.parse_args()
@@ -63,10 +66,27 @@ for arg in vars(args):
 ##### ----- PART 2: DEFINE FILEPATHS AND GENESETS BASED ON ID, SIZE, AND CONDITION INPUTS ----- #####
 # ------------------------------------------------------------------------------------------------- #
 
-# set base directories
+# split file names and file paths 
+
+# output filepath
+out_head_tail = os.path.split(args.out)
+out_path = out_head_tail[0]              # define output file path 
+out_name = out_head_tail[1]              # define output file name
+
+# check out path
+if out_path == '':
+    out_path = os.getcwd()         # if no file path is given for the output it will put it all in the current working directory
+    output = out_path+'/'+out_name
+elif '.' in out_path:
+    out_path = out_path.replace('.', os.getcwd())       # replace '.' with full file path to avoid errors later on
+    output = out_path+'/'+out_name
+else:
+    output = out_path+'/'+out_name
+
+# set directories
 DIR = os.path.dirname(__file__)
 DATADIR = os.path.normpath(os.path.join(DIR, 'DATA'))
-OUTDIR = os.path.normpath(os.path.join(DIR, 'OUTPUT'))
+OUTDIR = out_path
 GENESETDIR = os.path.normpath(os.path.join(DATADIR, 'GENESETS'))
 ANNOTDIR = os.path.normpath(os.path.join(DATADIR, 'MAGMA_ANNOT'))
 
@@ -231,10 +251,12 @@ elif args.id == 'ensembl92':
 
 
 # set MAGMA annotation filepath
-annot = os.path.normpath(os.path.join(ANNOTDIR, args.geneassoc))
-
-# set OUTPUT filepath
-output = os.path.normpath(os.path.join(OUTDIR, args.out))
+if './' in args.geneassoc:
+    annot = args.geneassoc.replace('.', os.getcwd(),1)
+elif ('/' in args.geneassoc) == False:                        # if no file path is given for the .genes.raw file it assumes it is in the working directory
+    annot = os.getcwd+'/'+args.geneassoc
+else:
+    annot = args.geneassoc
 
 # ------------------------------------------------------ #
 ##### ----- PART 3: RUN DRUG GENE SET ANALYSIS ----- #####
@@ -253,8 +275,8 @@ if (args.drugsets == 'solo' or args.drugsets == 'all'):
         print('\n\t%s warnings found (see %s.log for details)' % (int(warnings), (output+'_SOLO')))
 
         # print result locations 
-        print('\tResults for all drug gene sets saving to %s' % (OUTDIR+'/%s.gsa.out' % (args.out+'_SOLO')))
-        print('\tResults for significant drug gene sets saving to %s\n' % (OUTDIR+'/%s.gsa.set.genes.out' % (args.out+'_SOLO')))
+        print('\tResults for all drug gene sets saving to %s' % (OUTDIR+'/%s.gsa.out' % (out_name+'_SOLO')))
+        print('\tResults for significant drug gene sets saving to %s\n' % (OUTDIR+'/%s.gsa.set.genes.out' % (out_name+'_SOLO')))
 
     elif args.conditional == 'yes':
         
@@ -266,8 +288,8 @@ if (args.drugsets == 'solo' or args.drugsets == 'all'):
         print('\n\t%s warnings found (see %s.log for details)' % (int(warnings), (output+'_SOLO')))
 
         # print result locations 
-        print('\tResults for all drug gene sets saving to %s' % (OUTDIR+'/%s.gsa.out' % (args.out+'_SOLO')))
-        print('\tResults for significant drug gene sets saving to %s\n' % (OUTDIR+'/%s.gsa.set.genes.out' % (args.out+'_SOLO')))
+        print('\tResults for all drug gene sets saving to %s' % (OUTDIR+'/%s.gsa.out' % (out_name+'_SOLO')))
+        print('\tResults for significant drug gene sets saving to %s\n' % (OUTDIR+'/%s.gsa.set.genes.out' % (out_name+'_SOLO')))
 
 
 # ATC code drug gene set analysis
@@ -283,8 +305,8 @@ if (args.drugsets == 'atc' or args.drugsets == 'all'):
         print('\n\t%s warnings found (see %s.log for details)' % (int(warnings), (output+'_ATC')))
 
         # print result locations 
-        print('\tResults for all drug gene sets saving to %s' % (OUTDIR+'/%s.gsa.out' % (args.out+'_ATC')))
-        print('\tResults for significant drug gene sets saving to %s\n' % (OUTDIR+'/%s.gsa.set.genes.out' % (args.out+'_ATC')))
+        print('\tResults for all drug gene sets saving to %s' % (OUTDIR+'/%s.gsa.out' % (out_name+'_ATC')))
+        print('\tResults for significant drug gene sets saving to %s\n' % (OUTDIR+'/%s.gsa.set.genes.out' % (out_name+'_ATC')))
 
     elif args.conditional == 'yes':
         
@@ -296,8 +318,8 @@ if (args.drugsets == 'atc' or args.drugsets == 'all'):
         print('\n\t%s warnings found (see %s.log for details)' % (int(warnings), (output+'_ATC')))
 
         # print result locations 
-        print('\tResults for all drug gene sets saving to %s' % (OUTDIR+'/%s.gsa.out' % (args.out+'_ATC')))
-        print('\tResults for significant drug gene sets saving to %s\n' % (OUTDIR+'/%s.gsa.set.genes.out' % (args.out+'_ATC')))
+        print('\tResults for all drug gene sets saving to %s' % (OUTDIR+'/%s.gsa.out' % (out_name+'_ATC')))
+        print('\tResults for significant drug gene sets saving to %s\n' % (OUTDIR+'/%s.gsa.set.genes.out' % (out_name+'_ATC')))
 
 # MOA drug gene set analysis
 if (args.drugsets == 'moa' or args.drugsets == 'all'):
@@ -312,8 +334,8 @@ if (args.drugsets == 'moa' or args.drugsets == 'all'):
         print('\n\t%s warnings found (see %s.log for details)' % (int(warnings), (output+'_MOA')))
 
         # print result locations 
-        print('\tResults for all drug gene sets saving to %s' % (OUTDIR+'/%s.gsa.out' % (args.out+'_MOA')))
-        print('\tResults for significant drug gene sets saving to %s\n' % (OUTDIR+'/%s.gsa.set.genes.out' % (args.out+'_MOA')))
+        print('\tResults for all drug gene sets saving to %s' % (OUTDIR+'/%s.gsa.out' % (out_name+'_MOA')))
+        print('\tResults for significant drug gene sets saving to %s\n' % (OUTDIR+'/%s.gsa.set.genes.out' % (out_name+'_MOA')))
       
 
     elif args.conditional == 'yes':
@@ -326,8 +348,8 @@ if (args.drugsets == 'moa' or args.drugsets == 'all'):
         print('\n\t%s warnings found (see %s.log for details)' % (int(warnings), (output+'_MOA')))
 
         # print result locations 
-        print('\tResults for all drug gene sets saving to %s' % (OUTDIR+'/%s.gsa.out' % (args.out+'_MOA')))
-        print('\tResults for significant drug gene sets saving to %s\n' % (OUTDIR+'/%s.gsa.set.genes.out' % (args.out+'_MOA')))
+        print('\tResults for all drug gene sets saving to %s' % (OUTDIR+'/%s.gsa.out' % (out_name+'_MOA')))
+        print('\tResults for significant drug gene sets saving to %s\n' % (OUTDIR+'/%s.gsa.set.genes.out' % (out_name+'_MOA')))
 
 
 
@@ -344,8 +366,8 @@ if (args.drugsets == 'ind' or args.drugsets == 'all'):
         print('\n\t%s warnings found (see %s.log for details)' % (int(warnings), (output+'_IND')))
 
         # print result locations 
-        print('\tResults for all drug gene sets saving to %s' % (OUTDIR+'/%s.gsa.out' % (args.out+'_IND')))
-        print('\tResults for significant drug gene sets saving to %s\n' % (OUTDIR+'/%s.gsa.set.genes.out' % (args.out+'_IND')))
+        print('\tResults for all drug gene sets saving to %s' % (OUTDIR+'/%s.gsa.out' % (out_name+'_IND')))
+        print('\tResults for significant drug gene sets saving to %s\n' % (OUTDIR+'/%s.gsa.set.genes.out' % (out_name+'_IND')))
     
     elif args.conditional == 'yes':
     
@@ -357,8 +379,8 @@ if (args.drugsets == 'ind' or args.drugsets == 'all'):
         print('\n\t%s warnings found (see %s.log for details)' % (int(warnings), (output+'_IND')))
 
         # print result locations 
-        print('\tResults for all drug gene sets saving to %s' % (OUTDIR+'/%s.gsa.out' % (args.out+'_IND')))
-        print('\tResults for significant drug gene sets saving to %s\n' % (OUTDIR+'/%s.gsa.set.genes.out' % (args.out+'_IND')))  
+        print('\tResults for all drug gene sets saving to %s' % (OUTDIR+'/%s.gsa.out' % (out_name+'_IND')))
+        print('\tResults for significant drug gene sets saving to %s\n' % (OUTDIR+'/%s.gsa.set.genes.out' % (out_name+'_IND')))  
  
 # print done
 print('Drug gene set analysis finished.\n')
@@ -373,7 +395,7 @@ if args.enrich is not None:
     if (args.drugsets == 'solo' or args.drugsets == 'all'):
 
         # set full file paths for .raw file, gene set file
-        full = os.path.dirname(os.path.abspath(__file__)) + '/'
+        working = os.path.dirname(os.path.abspath(__file__)) + '/'
         
         #print 
         print('Running %s enrichment analysis...\n\n' % (args.enrich.upper()))
@@ -385,15 +407,15 @@ if args.enrich is not None:
         gsa_results = pd.read_csv(gsa, delimiter= "\s+", comment='#')               
             
         # set file path for gsa results
-        gsa_path = 'OUTPUT/%s.gsa.out' % (args.out+'_SOLO')
+        gsa_path = '%s.gsa.out' % (output+'_SOLO')
 
         # compute covariance 
         print('\tComputing correlation matrix...')
-        df.run_task_silent('Rscript --vanilla %s %s %s %s %s %s' % (full+'compute_corrs.R', annot, solo, (full+gsa_path), ('/'+args.out), full)) 
+        df.run_task_silent('Rscript --vanilla %s %s %s %s %s %s' % (working+'compute_corrs.R', annot, (os.getcwd()+'/'+solo), (gsa_path), ('/'+out_name), OUTDIR)) 
 
         # define filepath to set.corrs.rdata and to metadata.rdata file
-        corrdata = full+'OUTPUT/%s_setcorrs.rdata' % args.out
-        metaRdata = full+'DATA/metadata.rdata'
+        corrdata = out_path+'/'+'%s_setcorrs.rdata' % out_name
+        metaRdata = working+'DATA/metadata.rdata'
 
         # run either one group or all 
 
@@ -401,7 +423,7 @@ if args.enrich is not None:
             
             # compute dependent linear regression
             print('\tRunning dependent linear regression model...')
-            df.run_task_silent('Rscript --vanilla %s %s %s %s %s %s %s' % (full+'compute_lnreg.R', corrdata, metaRdata, args.enrich.lower(), args.nsize, args.out, OUTDIR))
+            df.run_task_silent('Rscript --vanilla %s %s %s %s %s %s %s %s' % (working+'compute_lnreg.R', corrdata, metaRdata, args.enrich.lower(), args.nsize, out_name, OUTDIR, args.correct))
 
         elif args.enrich == 'all':
             
@@ -413,10 +435,10 @@ if args.enrich is not None:
 
                 # compute dependent linear regression
                 print('\tRunning dependent linear regression model for %s groups...' % g.upper())
-                df.run_task_silent('Rscript --vanilla %s %s %s %s %s %s %s' % (full+'compute_lnreg.R', corrdata, metaRdata, g, args.nsize, (args.out+'_'+g.upper()), OUTDIR))
+                df.run_task_silent('Rscript --vanilla %s %s %s %s %s %s %s %s' % (working+'compute_lnreg.R', corrdata, metaRdata, g, args.nsize, (out_name+'_'+g.upper()), OUTDIR, args.correct))
 
         # remove correlation matrix file
-        df.run_task_silent('rm %s' % (OUTDIR+'/'+args.out+'_setcorrs.rdata'))
+        df.run_task_silent('rm %s' % (corrdata))
 
         # remove new gene set files if created new 
         # if args.setsize == 2:
