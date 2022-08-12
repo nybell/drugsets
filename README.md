@@ -70,8 +70,8 @@ install_version("dplyr", version = "1.0.7", repos = "http://cran.us.r-project.or
 1. Clone repository    
 `$ git clone https://github.com/nybell/drugsea`   
    
-2. Add input data to directory `/DATA/MAGMA_ANNOT/`    
-The only input data needed by the user is the [GENE_RESULTS].genes.raw file from MAGMA gene analysis. ***In order for DRUGSETS to run, users must put their [GENE_RESULTS].genes.raw into the `/DATA/MAGMA_ANNOT/` directory.*** All drug data used in the drug gene set analysis is included in the download, and is stored in the directory `/DATA/GENESETS/`.    
+2. Input data  
+The only input data needed by the user is the [GENE_RESULTS].genes.raw file from MAGMA gene analysis. All drug data used in the drug gene set analysis is included in the download, and is stored in the directory `/DATA/GENESETS/`. ***The data needs to be stored in this directory in order to work.***    
    
 ## Running drug gene set analysis   
     
@@ -80,9 +80,10 @@ Drug gene set analysis is done by executing the script `drugsets.py`. The only f
 * `--geneassoc` or `-g`: specifies the filepath and filename of the user's [GENE_RESULTS].genes.raw file (i.e., `/INSERT/PATH/TO/[GENE_RESULTS].genes.raw`)
 * `--drugsets` or `-d`: specifies which type of drug genesets to use. There are four options:
     * `solo`: drug gene sets for each individual drug in our data. **NOTE:** if you want to test for enrichment you much use `solo`
-    * `atc`: drug genesets for each ATC III code category in our data 
-    * `moa`: drug genesets for each mechanism of action category in our data 
+    * `atc`: drug gene sets for each ATC III code category in our data 
+    * `moa`: drug gene sets for each mechanism of action category in our data 
     * `ind`: drug gene sets for each clinical indication category in our data 
+    * `all`: run drug gene-set analysis for everytype of drug gene set
 * `--out` or `-o`: specify prefix for output files
 * `--conditional` or `-c`: Specifies whether or not to run competitive gene-set analysis while conditioning on a gene set of all druggable genes. Input options are `yes` and `no` (default = `yes`).
 * `--id` or `-i`: Indicate which gene naming convention is used for your .genes.raw file. Options are "entrez" and "ensembl v105", and "ensembl v92". If you ran MAGMA using FUMA, then use "ensembl92".
@@ -91,8 +92,9 @@ Drug gene set analysis is done by executing the script `drugsets.py`. The only f
     * `atc`: test drugs grouped by ATC code 
     * `moa`: test drugs grouped by mechanism of action 
     * `ind`: test drugs grouped by clinical indication 
+    * `all`: test all types of drug groups
 * `--nsize` or `-n`: minimum sample size of drug categories to use when testing for enrichment (e.g., when set to 5, ATC code categories with less than 5 drugs will not be tested for enrichment). 
-* `--showlog` or `-l`: specifies whether or not print the output from MAGMA gene-set analysis to screen. Options are `no` and `yes` (default = `no`) 
+* `--correct` or `-p`: select Bonferroni or FDR correction for the drug group associations tests. Input options are `bonf` and `fdr`. 
     
 ### Example usage    
     
@@ -102,7 +104,7 @@ The following code tests individual drug gene set analysis for associated with s
 `$ cd /PATH/TO/drugsets-main/`     
   
 2. Execute script    
-`python ./drugsets.py --geneassoc SCZ_SAMPLE.genes.raw --drugsets solo --out SCZ --conditional yes --setsize 5 --enrich atc --nsize 5 --showlog no`    
+`python ./drugsets.py --geneassoc /[PATH]/[TO]/[FILE]/SCZ_SAMPLE.genes.raw --drugsets solo --conditional yes --setsize 5 --enrich atc --nsize 5 --out /[PATH]/[TO]/[FILE]/SCZ_output`    
     
 ## Output    
    
