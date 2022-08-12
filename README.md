@@ -83,18 +83,18 @@ Drug gene set analysis is done by executing the script `drugsets.py`. The only f
     * `atc`: drug gene sets for each ATC III code category in our data 
     * `moa`: drug gene sets for each mechanism of action category in our data 
     * `ind`: drug gene sets for each clinical indication category in our data 
-    * `all`: run drug gene-set analysis for everytype of drug gene set
-* `--out` or `-o`: specify prefix for output files
-* `--conditional` or `-c`: Specifies whether or not to run competitive gene-set analysis while conditioning on a gene set of all druggable genes. Input options are `yes` and `no` (default = `yes`).
-* `--id` or `-i`: Indicate which gene naming convention is used for your .genes.raw file. Options are "entrez" and "ensembl v105", and "ensembl v92". If you ran MAGMA using FUMA, then use "ensembl92".
-* `--setsize` or `-s`: specfify minimum N for drug gene sets. 
+    * `all`: run drug gene-set analysis for everytype of drug gene set  
 * `--enrich` or `-e`: tests all groups in the given category to see if drugs in each group have higher Z-statistics from the drug gene-set analysis than drugs not in the group (e.g., "do the drugs with ATC code N03A have higher Z-statistics from the drug gene-set analysis than drugs without ATC CODE N03A?"). Tests all drugs in the category type that is input (e.g., for input 'atc', all ATC code groups will be tested) and then is Bonferroni corrected for the number of groups tested. There are three input options:
     * `atc`: test drugs grouped by ATC code 
     * `moa`: test drugs grouped by mechanism of action 
     * `ind`: test drugs grouped by clinical indication 
     * `all`: test all types of drug groups
+* `--conditional` or `-c`: Specifies whether or not to run competitive gene-set analysis while conditioning on a gene set of all druggable genes. Input options are `yes` and `no` (default = `yes`).
+* `--id` or `-i`: Indicate which gene naming convention is used for your .genes.raw file. Options are "entrez" and "ensembl v105", and "ensembl v92". If you ran MAGMA using FUMA, then use "ensembl92".
+* `--setsize` or `-s`: specfify minimum N for drug gene sets. 
 * `--nsize` or `-n`: minimum sample size of drug categories to use when testing for enrichment (e.g., when set to 5, ATC code categories with less than 5 drugs will not be tested for enrichment). 
-* `--correct` or `-p`: select Bonferroni or FDR correction for the drug group associations tests. Input options are `bonf` and `fdr`. 
+* `--correct` or `-p`: select Bonferroni or FDR correction for the drug group associations tests. Input options are `bonf` and `fdr`.     
+* `--out` or `-o`: specify prefix for output files  
     
 ### Example usage    
     
