@@ -331,7 +331,7 @@ if args.enrich is not None:
 
         # compute covariance 
         print('\tComputing correlation matrix...')
-        df.run_task_silent('Rscript --vanilla %s %s %s %s %s %s' % (os.path.normpath(working+'compute_corrs.R'), annot, os.path.normpath(solo), (gsa), os.path.normpath('/'+out_name), OUTDIR)) 
+        df.run_task_r('Rscript --vanilla %s %s %s %s %s %s' % (os.path.normpath(working+'compute_corrs.R'), annot, os.path.normpath(solo), (gsa), os.path.normpath('/'+out_name), OUTDIR)) 
 
         # define filepath to set.corrs.rdata and to metadata.rdata file
         corrdata = os.path.normpath(out_path+'/'+'%s_setcorrs.rdata' % out_name)
@@ -343,7 +343,7 @@ if args.enrich is not None:
             
             # compute dependent linear regression
             print('\tRunning dependent linear regression model...')
-            df.run_task_silent('Rscript --vanilla %s %s %s %s %s %s %s %s' % (os.path.normpath(working+'compute_lnreg.R'), corrdata, metaRdata, args.enrich.lower(), args.nsize, out_name, (OUTDIR+os.path.sep), args.correct))
+            df.run_task_r('Rscript --vanilla %s %s %s %s %s %s %s %s' % (os.path.normpath(working+'compute_lnreg.R'), corrdata, metaRdata, args.enrich.lower(), args.nsize, out_name, (OUTDIR+os.path.sep), args.correct))
 
         elif args.enrich == 'all':
             
@@ -355,7 +355,7 @@ if args.enrich is not None:
 
                 # compute dependent linear regression
                 print('\tRunning dependent linear regression model for %s groups...' % g.upper())
-                df.run_task_silent('Rscript --vanilla %s %s %s %s %s %s %s %s' % (os.path.normpath(working+'compute_lnreg.R'), corrdata, metaRdata, g, args.nsize, (out_name+'_'+g.upper()), (OUTDIR+os.path.sep), args.correct))
+                df.run_task_r('Rscript --vanilla %s %s %s %s %s %s %s %s' % (os.path.normpath(working+'compute_lnreg.R'), corrdata, metaRdata, g, args.nsize, (out_name+'_'+g.upper()), (OUTDIR+os.path.sep), args.correct))
 
         # remove correlation matrix file
         os.remove(corrdata)

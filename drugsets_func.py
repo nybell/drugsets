@@ -17,6 +17,8 @@ def run_task(cmd):
         raise CalledProcessError(p.returncode, p.args)
 
 def run_task_silent(cmd):
+    cmd= cmd.split('.R ')
+    cmd = cmd[0] + '.R ' + cmd[1].replace('\\','\\\\')
     subprocess.run(cmd, shell=True, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 # define function to create new gene set file with custom size
