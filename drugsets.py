@@ -81,11 +81,13 @@ else:
     output = out_path+'/'+out_name
 
 # set directories
-DIR = os.path.dirname(__file__)
+DIR = os.path.dirname(os.path.abspath(__file__))
 DATADIR = os.path.normpath(os.path.join(DIR, 'DATA'))
 OUTDIR = out_path
 GENESETDIR = os.path.normpath(os.path.join(DATADIR, 'GENESETS'))
 ANNOTDIR = os.path.normpath(os.path.join(DATADIR, 'MAGMA_ANNOT'))
+
+print(GENESETDIR)
 
 # set filepaths and minimum gene sets size if gene's are named using ENTREZ
 if args.id == 'entrez':
@@ -331,7 +333,7 @@ if args.enrich is not None:
 
         # compute covariance 
         print('\tComputing correlation matrix...')
-        df.run_task_silent('Rscript --vanilla %s %s %s %s %s %s' % (os.path.normpath(working+'compute_corrs.R'), annot, os.path.normpath(os.getcwd()+'/'+solo), (gsa), os.path.normpath('/'+out_name), OUTDIR)) 
+        df.run_task_silent('Rscript --vanilla %s %s %s %s %s %s' % (os.path.normpath(working+'compute_corrs.R'), annot, os.path.normpath(solo), (gsa), os.path.normpath('/'+out_name), OUTDIR)) 
 
         # define filepath to set.corrs.rdata and to metadata.rdata file
         corrdata = os.path.normpath(out_path+'/'+'%s_setcorrs.rdata' % out_name)
