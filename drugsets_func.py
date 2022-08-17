@@ -2,13 +2,8 @@
 
 # import packages 
 import os
-import sys
-import argparse
 import subprocess
-import numpy as np
-import pandas as pd
 from tqdm import tqdm
-from scipy import stats
 from subprocess import Popen, PIPE, CalledProcessError
 
 # define function to run commands in terminal
@@ -35,7 +30,7 @@ def setsize(path, file, size):
     new = path+new
 
     # create file 
-    with open(path+file) as oldfile, open(new, 'w') as newfile:
+    with open(os.path.normpath(path+file)) as oldfile, open(os.path.normpath(new), 'w') as newfile:
         for line in oldfile:
                 if len(line.split('\t')) -3 >= int(size):
                     newfile.write(line)

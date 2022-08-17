@@ -7,9 +7,6 @@
 # import packages 
 import os
 import argparse
-import subprocess
-import numpy as np
-import pandas as pd
 import drugsets_func as df
 
 # parse arguments 
@@ -251,137 +248,63 @@ elif args.id == 'ensembl92':
 
 
 # set MAGMA annotation filepath
-if './' in args.geneassoc:
-    annot = args.geneassoc.replace('.', os.getcwd(),1)
-elif ('/' in args.geneassoc) == False:                        # if no file path is given for the .genes.raw file it assumes it is in the working directory
-    annot = os.getcwd+'/'+args.geneassoc
-else:
-    annot = args.geneassoc
+print(args.geneassoc)
+if '\\' in args.geneassoc:
+    print(not'/' in args.geneassoc or not '\\' in args.geneassoc)
 
+if './' in args.geneassoc or '.\\' in args.geneassoc:
+    annot = args.geneassoc.replace('.', os.getcwd(),1)
+elif '/' in args.geneassoc or '\\' in args.geneassoc:                        # if no file path is given for the .genes.raw file it assumes it is in the working directory
+    annot = args.geneassoc
+else:
+    annot = os.path.normpath(os.getcwd() + '/' + args.geneassoc)
 # ------------------------------------------------------ #
 ##### ----- PART 3: RUN DRUG GENE SET ANALYSIS ----- #####
 # ------------------------------------------------------ #
 
 # individual drug gene set analysis
-if (args.drugsets == 'solo' or args.drugsets == 'all'):
+#Set output labels for each chosen analysis
+if args.drugsets == 'all':
+    analysis_labels = ['_SOLO','_ATC', '_MOA', '_IND']
+else:
+    analysis_labels = ['_' + args.drugsets.upper()]
+
+#Loop over each analysis output label and match input file for corresponding analysis
+for label  in analysis_labels:
+    if label == '_SOLO':
+        analysis = solo
+    elif label == '_ATC':
+        analysis = atc
+    elif label == '_MOA':
+        analysis = moa
+    elif label == '_IND':
+        analysis = ind
 
     if args.conditional == 'no':
-
-        print('\nRunning SOLO drug gene set analysis in MAGMA...\n')
-        df.run_task('magma --gene-results %s --set-annot %s --settings gene-info --out %s' % (annot, solo, (output+'_SOLO')))
+        print('\nRunning %s drug gene set analysis in MAGMA...\n' % (label.strip('_')))
+        df.run_task('magma --gene-results %s --set-annot %s --settings gene-info --out %s' % (annot, analysis, os.path.normpath((output + label))))
         
         # print log 
-        warnings = open(f'{output+"_SOLO"}.log').read().count('WARNING:')
-        print('\n\t%s warnings found (see %s.log for details)' % (int(warnings), (output+'_SOLO')))
+        warnings = open(os.path.normpath(f'{output+label}.log')).read().count('WARNING:')
+        print('\n\t%s warnings found (see %s.log for details)' % (int(warnings), os.path.normpath((output + label))))
 
         # print result locations 
-        print('\tResults for all drug gene sets saving to %s' % (OUTDIR+'/%s.gsa.out' % (out_name+'_SOLO')))
-        print('\tResults for significant drug gene sets saving to %s\n' % (OUTDIR+'/%s.gsa.set.genes.out' % (out_name+'_SOLO')))
+        print('\tResults for all drug gene sets saving to %s' % (os.path.normpath(OUTDIR+'/%s.gsa.out' % (out_name + label))))
+        print('\tResults for significant drug gene sets saving to %s\n' % (os.path.normpath(OUTDIR+'/%s.gsa.set.genes.out' % (out_name + label))))
 
     elif args.conditional == 'yes':
         
-        print('\nRunning conditional SOLO drug gene set analysis in MAGMA...\n')
-        df.run_task('magma --gene-results %s --set-annot %s --settings gene-info --model condition=druggable --out %s' % (annot, solo, (output+'_SOLO')))
+        print('\nRunning conditional %s drug gene set analysis in MAGMA...\n' % (label.strip('_')))
+        df.run_task('magma --gene-results %s --set-annot %s --settings gene-info --model condition=druggable --out %s' % (annot, analysis, os.path.normpath((output + label))))
         
         # print log 
-        warnings = open(f'{output+"_SOLO"}.log').read().count('WARNING:')
-        print('\n\t%s warnings found (see %s.log for details)' % (int(warnings), (output+'_SOLO')))
+        warnings = open(os.path.normpath(f'{output+label}.log')).read().count('WARNING:')
+        print('\n\t%s warnings found (see %s.log for details)' % (int(warnings), os.path.normpath((output + analysis))))
 
         # print result locations 
-        print('\tResults for all drug gene sets saving to %s' % (OUTDIR+'/%s.gsa.out' % (out_name+'_SOLO')))
-        print('\tResults for significant drug gene sets saving to %s\n' % (OUTDIR+'/%s.gsa.set.genes.out' % (out_name+'_SOLO')))
+        print('\tResults for all drug gene sets saving to %s' % (os.path.normpath(OUTDIR+'/%s.gsa.out' % (out_name + label))))
+        print('\tResults for significant drug gene sets saving to %s\n' % (os.path.normpath(OUTDIR+'/%s.gsa.set.genes.out' % (out_name + label))))
 
-
-# ATC code drug gene set analysis
-if (args.drugsets == 'atc' or args.drugsets == 'all'):
-
-    if args.conditional == 'no':
-
-        print('\nRunning ATC drug gene set analysis in MAGMA...\n')
-        df.run_task('magma --gene-results %s --set-annot %s --settings gene-info --out %s' % (annot, atc, (output+'_ATC')))
-        
-        # print log 
-        warnings = open(f'{output+"_ATC"}.log').read().count('WARNING:')
-        print('\n\t%s warnings found (see %s.log for details)' % (int(warnings), (output+'_ATC')))
-
-        # print result locations 
-        print('\tResults for all drug gene sets saving to %s' % (OUTDIR+'/%s.gsa.out' % (out_name+'_ATC')))
-        print('\tResults for significant drug gene sets saving to %s\n' % (OUTDIR+'/%s.gsa.set.genes.out' % (out_name+'_ATC')))
-
-    elif args.conditional == 'yes':
-        
-        print('\nRunning conditional ATC drug gene set analysis in MAGMA...\n')
-        df.run_task('magma --gene-results %s --set-annot %s --settings gene-info --model condition=druggable --out %s' % (annot, atc, (output+'_ATC')))
-        
-        # print log 
-        warnings = open(f'{output+"_ATC"}.log').read().count('WARNING:')
-        print('\n\t%s warnings found (see %s.log for details)' % (int(warnings), (output+'_ATC')))
-
-        # print result locations 
-        print('\tResults for all drug gene sets saving to %s' % (OUTDIR+'/%s.gsa.out' % (out_name+'_ATC')))
-        print('\tResults for significant drug gene sets saving to %s\n' % (OUTDIR+'/%s.gsa.set.genes.out' % (out_name+'_ATC')))
-
-# MOA drug gene set analysis
-if (args.drugsets == 'moa' or args.drugsets == 'all'):
-
-    if args.conditional =='no':
-
-        print('\nRunning MOA drug gene set analysis in MAGMA...\n')
-        df.run_task('magma --gene-results %s --set-annot %s --settings gene-info --out %s' % (annot, moa, (output+'_MOA')))
-
-        # print log 
-        warnings = open(f'{output+"_MOA"}.log').read().count('WARNING:')
-        print('\n\t%s warnings found (see %s.log for details)' % (int(warnings), (output+'_MOA')))
-
-        # print result locations 
-        print('\tResults for all drug gene sets saving to %s' % (OUTDIR+'/%s.gsa.out' % (out_name+'_MOA')))
-        print('\tResults for significant drug gene sets saving to %s\n' % (OUTDIR+'/%s.gsa.set.genes.out' % (out_name+'_MOA')))
-      
-
-    elif args.conditional == 'yes':
-
-        print('\nRunning conditional MOA drug gene set analysis in MAGMA...\n')
-        df.run_task('magma --gene-results %s --set-annot %s --settings gene-info --model condition=druggable --out %s' % (annot, moa, (output+'_MOA')))
-
-        # print log 
-        warnings = open(f'{output+"_MOA"}.log').read().count('WARNING:')
-        print('\n\t%s warnings found (see %s.log for details)' % (int(warnings), (output+'_MOA')))
-
-        # print result locations 
-        print('\tResults for all drug gene sets saving to %s' % (OUTDIR+'/%s.gsa.out' % (out_name+'_MOA')))
-        print('\tResults for significant drug gene sets saving to %s\n' % (OUTDIR+'/%s.gsa.set.genes.out' % (out_name+'_MOA')))
-
-
-
-# Clinical indication drug gene set analysis 
-if (args.drugsets == 'ind' or args.drugsets == 'all'):
-
-    if args.conditional == 'no':
-
-        print('\nRunning CLINICAL INDICATION drug gene set analysis in MAGMA...\n')
-        df.run_task('magma --gene-results %s --set-annot %s --settings gene-info --out %s' % (annot, ind, (output+'_IND')))
-
-        # print log 
-        warnings = open(f'{output+"_IND"}.log').read().count('WARNING:')
-        print('\n\t%s warnings found (see %s.log for details)' % (int(warnings), (output+'_IND')))
-
-        # print result locations 
-        print('\tResults for all drug gene sets saving to %s' % (OUTDIR+'/%s.gsa.out' % (out_name+'_IND')))
-        print('\tResults for significant drug gene sets saving to %s\n' % (OUTDIR+'/%s.gsa.set.genes.out' % (out_name+'_IND')))
-    
-    elif args.conditional == 'yes':
-    
-        print('\nRunning conditional CLINICAL INDICATION drug gene set analysis in MAGMA...\n')
-        df.run_task('magma --gene-results %s --set-annot %s --settings gene-info --model condition=druggable --out %s' % (annot, ind, (output+'_IND')))
-
-        # print log 
-        warnings = open(f'{output+"_IND"}.log').read().count('WARNING:')
-        print('\n\t%s warnings found (see %s.log for details)' % (int(warnings), (output+'_IND')))
-
-        # print result locations 
-        print('\tResults for all drug gene sets saving to %s' % (OUTDIR+'/%s.gsa.out' % (out_name+'_IND')))
-        print('\tResults for significant drug gene sets saving to %s\n' % (OUTDIR+'/%s.gsa.set.genes.out' % (out_name+'_IND')))  
- 
 # print done
 print('Drug gene set analysis finished.\n')
 
@@ -401,21 +324,18 @@ if args.enrich is not None:
         print('Running %s enrichment analysis...\n\n' % (args.enrich.upper()))
 
         # set file path for .gsa.out results file
-        gsa = (output+'_SOLO'+'.gsa.out')
-
-        # load gsa results 
-        gsa_results = pd.read_csv(gsa, delimiter= "\s+", comment='#')               
-            
-        # set file path for gsa results
-        gsa_path = '%s.gsa.out' % (output+'_SOLO')
+        if os.path.exists(os.path.normpath((output+'_SOLO'+'.gsa.out'))):
+            gsa = os.path.normpath((output+'_SOLO'+'.gsa.out'))
+        elif os.path.exists(os.path.normpath((output+'_SOLO'+'.gsa.out.txt'))):
+            gsa = os.path.normpath((output+'_SOLO'+'.gsa.out.txt'))              
 
         # compute covariance 
         print('\tComputing correlation matrix...')
-        df.run_task_silent('Rscript --vanilla %s %s %s %s %s %s' % (working+'compute_corrs.R', annot, (os.getcwd()+'/'+solo), (gsa_path), ('/'+out_name), OUTDIR)) 
+        df.run_task_silent('Rscript --vanilla %s %s %s %s %s %s' % (os.path.normpath(working+'compute_corrs.R'), annot, os.path.normpath(os.getcwd()+'/'+solo), (gsa), os.path.normpath('/'+out_name), OUTDIR)) 
 
         # define filepath to set.corrs.rdata and to metadata.rdata file
-        corrdata = out_path+'/'+'%s_setcorrs.rdata' % out_name
-        metaRdata = working+'DATA/metadata.rdata'
+        corrdata = os.path.normpath(out_path+'/'+'%s_setcorrs.rdata' % out_name)
+        metaRdata = os.path.normpath(working+'DATA/metadata.rdata')
 
         # run either one group or all 
 
@@ -423,7 +343,7 @@ if args.enrich is not None:
             
             # compute dependent linear regression
             print('\tRunning dependent linear regression model...')
-            df.run_task_silent('Rscript --vanilla %s %s %s %s %s %s %s %s' % (working+'compute_lnreg.R', corrdata, metaRdata, args.enrich.lower(), args.nsize, out_name, OUTDIR, args.correct))
+            df.run_task_silent('Rscript --vanilla %s %s %s %s %s %s %s %s' % (os.path.normpath(working+'compute_lnreg.R'), corrdata, metaRdata, args.enrich.lower(), args.nsize, out_name, OUTDIR, args.correct))
 
         elif args.enrich == 'all':
             
@@ -435,10 +355,10 @@ if args.enrich is not None:
 
                 # compute dependent linear regression
                 print('\tRunning dependent linear regression model for %s groups...' % g.upper())
-                df.run_task_silent('Rscript --vanilla %s %s %s %s %s %s %s %s' % (working+'compute_lnreg.R', corrdata, metaRdata, g, args.nsize, (out_name+'_'+g.upper()), OUTDIR, args.correct))
+                df.run_task_silent('Rscript --vanilla %s %s %s %s %s %s %s %s' % (os.path.normpath(working+'compute_lnreg.R'), corrdata, metaRdata, g, args.nsize, (out_name+'_'+g.upper()), OUTDIR, args.correct))
 
         # remove correlation matrix file
-        df.run_task_silent('rm %s' % (corrdata))
+        os.remove(corrdata)
 
         # remove new gene set files if created new 
         # if args.setsize == 2:
