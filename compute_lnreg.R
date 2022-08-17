@@ -122,16 +122,16 @@ if (args[7] == 'bonf') {
 }
 
 # save results 
-write.table(results, sprintf('%s/lnreg.%s.%s.csv', args[6], args[3], args[5]), row.names = FALSE, sep=',', quote = FALSE)   # raw 
+write.table(results, sprintf('%slnreg.%s.%s.csv', args[6], args[3], args[5]), row.names = FALSE, sep=',', quote = FALSE)   # raw 
 
 # save corrected results
 if (args[7] == 'bonf') {
   if (nrow(results_bonf) > 0) {
-    write.table(results_bonf, sprintf('%s/lnreg.%s.%s.%s.csv',args[6], args[7], args[3], args[5]), row.names = FALSE, sep=',', quote = FALSE)  # Bonf
+    write.table(results_bonf, sprintf('%slnreg.%s.%s.%s.csv',args[6], args[7], args[3], args[5]), row.names = FALSE, sep=',', quote = FALSE)  # Bonf
   }
 } else if (args[7] == 'fdr') {
   if (nrow(results_fdr) > 0) {
-    write.table(results_fdr, sprintf('%s/lnreg.%s.%s.%s.csv',args[6], args[7], args[3], args[5]), row.names = FALSE, sep=',', quote = FALSE)  # Bonf
+    write.table(results_fdr, sprintf('%slnreg.%s.%s.%s.csv',args[6], args[7], args[3], args[5]), row.names = FALSE, sep=',', quote = FALSE)  # Bonf
   }
 }
 
