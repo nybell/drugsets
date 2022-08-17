@@ -104,7 +104,11 @@ The following code tests individual drug gene set analysis for associated with s
 `$ cd /PATH/TO/drugsets-main/`     
   
 2. Execute script    
-`python ./drugsets.py --geneassoc /[PATH]/[TO]/[FILE]/SCZ_SAMPLE.genes.raw --drugsets solo --conditional yes --setsize 5 --enrich atc --nsize 5 --out /[PATH]/[TO]/[FILE]/SCZ_output`    
+`python ./drugsets.py --geneassoc /[PATH]/[TO]/[FILE]/SCZ_SAMPLE.genes.raw --drugsets solo --conditional yes --setsize 5 --enrich atc --nsize 5 --out /[PATH]/[TO]/[FILE]/SCZ_output`  
+
+or the following if the working directory is not the drugsets-main directory:  
+
+`python /[PATH]/[TO]/[DRUGSETS-MAIN]/drugsets.py --geneassoc /[PATH]/[TO]/[FILE]/SCZ_SAMPLE.genes.raw --drugsets solo --conditional yes --setsize 5 --enrich atc --nsize 5 --out /[PATH]/[TO]/[FILE]/SCZ_output`
     
 ## Output    
    
