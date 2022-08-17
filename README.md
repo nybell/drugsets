@@ -4,7 +4,7 @@ DRUg Gene SET AnalysiS (DRUGSETS) is a command line interface (CLI) tool impleme
 Nathaniel Bell (n.y.bell@vu.nl)
 
 ## Prerequisites    
-DRUGSETS was developed using [Python 3.8.5](https://www.python.org/) and [R 4.1.0](https://www.r-project.org/) with the following packages. Older versions of these packages may work but have not been tested:    
+DRUGSETS was developed using [Python 3.8.5](https://www.python.org/) and [R 4.1.0](https://www.r-project.org/) with the following packages. Older versions of these packages will not work:    
 
 Python  
 [tqdm](https://tqdm.github.io) == 4.62.3   
