@@ -87,8 +87,6 @@ OUTDIR = out_path
 GENESETDIR = os.path.normpath(os.path.join(DATADIR, 'GENESETS'))
 ANNOTDIR = os.path.normpath(os.path.join(DATADIR, 'MAGMA_ANNOT'))
 
-print(GENESETDIR)
-
 # set filepaths and minimum gene sets size if gene's are named using ENTREZ
 if args.id == 'entrez':
 
