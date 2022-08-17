@@ -16,7 +16,7 @@ def run_task(cmd):
     if p.returncode != 0:
         raise CalledProcessError(p.returncode, p.args)
 
-def run_task_silent(cmd):
+def run_task_r(cmd):
     cmd= cmd.split('.R ')
     cmd = cmd[0] + '.R ' + cmd[1].replace('\\','\\\\')
     subprocess.run(cmd, shell=True, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
