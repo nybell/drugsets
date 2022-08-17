@@ -80,6 +80,8 @@ elif '.' in out_path:
 else:
     output = out_path+'/'+out_name
 
+print(output)
+
 # set directories
 DIR = os.path.dirname(__file__)
 DATADIR = os.path.normpath(os.path.join(DIR, 'DATA'))
@@ -248,7 +250,6 @@ elif args.id == 'ensembl92':
 
 
 # set MAGMA annotation filepath
-print(args.geneassoc)
 if '\\' in args.geneassoc:
     print(not'/' in args.geneassoc or not '\\' in args.geneassoc)
 
@@ -281,6 +282,8 @@ for label  in analysis_labels:
     elif label == '_IND':
         analysis = ind
 
+    print(analysis)
+
     if args.conditional == 'no':
         print('\nRunning %s drug gene set analysis in MAGMA...\n' % (label.strip('_')))
         df.run_task('magma --gene-results %s --set-annot %s --settings gene-info --out %s' % (annot, analysis, os.path.normpath((output + label))))
@@ -300,7 +303,7 @@ for label  in analysis_labels:
         
         # print log 
         warnings = open(os.path.normpath(f'{output+label}.log')).read().count('WARNING:')
-        print('\n\t%s warnings found (see %s.log for details)' % (int(warnings), os.path.normpath((output + analysis))))
+        print('\n\t%s warnings found (see %s.log for details)' % (int(warnings), os.path.normpath((output + label))))
 
         # print result locations 
         print('\tResults for all drug gene sets saving to %s' % (os.path.normpath(OUTDIR+'/%s.gsa.out' % (out_name + label))))
