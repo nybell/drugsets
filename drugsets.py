@@ -80,8 +80,6 @@ elif '.' in out_path:
 else:
     output = out_path+'/'+out_name
 
-print(output)
-
 # set directories
 DIR = os.path.dirname(__file__)
 DATADIR = os.path.normpath(os.path.join(DIR, 'DATA'))
@@ -281,8 +279,6 @@ for label  in analysis_labels:
         analysis = moa
     elif label == '_IND':
         analysis = ind
-
-    print(analysis)
 
     if args.conditional == 'no':
         print('\nRunning %s drug gene set analysis in MAGMA...\n' % (label.strip('_')))
