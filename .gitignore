@@ -132,8 +132,6 @@ dmypy.json
 .DS_Store
 DATA/.DS_Store
 DATA/GENESETS/.DS_Store
-DATA/GENESETS/ind_entrez_sets_min5.txt
-DATA/GENESETS/tmp/
 OUTPUT/.DS_Store
 OUTPUT/.Rhistory
 setcorrs_dg/
