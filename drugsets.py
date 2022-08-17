@@ -254,7 +254,7 @@ elif args.id == 'ensembl92':
 if './' in args.geneassoc:
     annot = args.geneassoc.replace('.', os.getcwd(),1)
 elif ('/' in args.geneassoc) == False:                        # if no file path is given for the .genes.raw file it assumes it is in the working directory
-    annot = os.getcwd+'/'+args.geneassoc
+    annot = os.path.normpath(os.getcwd, args.geneassoc)
 else:
     annot = args.geneassoc
 
