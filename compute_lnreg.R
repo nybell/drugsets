@@ -43,14 +43,21 @@ if (tolower(args[3]) == 'atc') {
 lnreg_dep <- function(X, set.corrs.inv, y) {
   
   N = length(y); K = ncol(X) # define N & K
-  Xt <- t(X)     # tranpose X 
+  df <- (N - K)              # calculate degrees of freedom 
+  Xt <- t(X)                 # tranpose X 
   W <- solve(Xt %*% set.corrs.inv %*% X)     # compute W matrix 
   B <- W %*% Xt %*% set.corrs.inv %*% y      # compute beta 
-  sigma <- t(y - (X %*% B)) %*% set.corrs.inv %*% (y - (X %*% B)) / (N - K)     # compute sigma squared
-  t <- B[2] / sqrt(sigma * W[2,2])     # compute test statistic 
-  p <- pt(t, (N - K), lower.tail = F)            # compute two tailed p-value for test stat: add abs(), *2 for two-tailed
-  
-  results <- c(B[2],sigma,t,p)    # save results
+  sigma2 <- (t(y - (X %*% B)) %*% set.corrs.inv %*% (y - (X %*% B))) / df     # compute sigma squared
+  t <- B[2] / sqrt(sigma2 * W[2,2])                    # compute test statistic 
+  p <- pt(t, df, lower.tail = F)                 # compute two tailed p-value for test stat: add abs(), *2 for two-tailed
+  se <- sqrt(sigma2 * W[2,2])         # /sqrt(N) calculate standard error
+  error <- qt(0.975,df=(N-K))*se     # calculate error margin
+  left <- (B[2] - error)                               # calculate lower bound of ci
+  right <- (B[2] + error)                              # calculate upper bound of ci
+  ci <- c(left,right)                 # confidence interval              
+
+  # save results 
+  results <- c(B[2],se,ci,t,df,p)
   
   return(results)
   
@@ -68,7 +75,7 @@ ones <- as.vector(rep(c(1),each=length(merged$data)))
 size <- as.vector(as.numeric(merged$size))
 
 # define empty data frame 
-results <- data.frame(matrix(NA, nrow = 0, ncol = 5))
+results <- data.frame(matrix(NA, nrow = 0, ncol = 8))
 
 # loop through all unique ATC codes in data set and run linear regression
 for (code in codes) {
@@ -94,17 +101,16 @@ for (code in codes) {
     
     # add to dataframe 
     results <- rbind(outcome, results)
-    
+
   } else {
     next
   }
-  
-  
+
 }
 
 # add column names to results
-colnames(results) <- c('GROUP','BETA','SIGMA','T','P')
-results <- results %>% mutate_at(c('BETA','SIGMA','T','P'), as.numeric)
+colnames(results) <- c('GROUP','BETA','SE','CI_lower','CI_upper','T','DF','P')
+results <- results %>% mutate_at(c('BETA','SE','CI_lower','CI_upper','T','DF','P'), as.numeric)
 results <- results[order(results$P),]
 
 if (args[7] == 'bonf') {

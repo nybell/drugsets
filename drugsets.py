@@ -7,6 +7,7 @@
 # import packages 
 import os
 import argparse
+import pandas as pd
 import drugsets_func as df
 
 # parse arguments 
@@ -18,7 +19,7 @@ parser.add_argument('--drugsets', '-d', default='solo', type=str, choices=['solo
     help='Type of drug gene set to use (individual, ATC code, mechanism of action, clinical indication).',
     required=True)
 parser.add_argument('--out', '-o', default=None, type=str,
-    help='Filename of output.',
+    help='File path + prefix name of output file.',
     required=True)
 parser.add_argument('--conditional', '-c', default='yes', type=str, choices=['yes','no'],
     help='"yes" will run competitive gene-set analysis in MAGMA while conditioning on a gene set of all druggable genes, "no" will run competitive gene-set analysis without any conditional analysis',
@@ -31,7 +32,10 @@ parser.add_argument('--id', '-i', default='entrez', type=str, choices=['entrez',
         If you ran MAGMA using FUMA, then use "ensembl92"',
     required=False)   
 parser.add_argument('--enrich', '-e', default=None, type=str, choices=['atc', 'moa', 'ind', 'all'],
-    help='Test drug category for enrichment.',
+    help='Test drug category for enrichment using linear regression model.',
+    required=False)
+parser.add_argument('--enrich_auc', '-auc', default=None, type=str, choices=['atc', 'moa', 'ind', 'all'],
+    help='Test drug category for enrichment using drug AUC.',
     required=False)
 parser.add_argument('--nsize', '-n', default=5, type=float,
     help = 'Set minimum sample size for drug categories being tested for enrichment.',
@@ -63,8 +67,6 @@ for arg in vars(args):
 ##### ----- PART 2: DEFINE FILEPATHS AND GENESETS BASED ON ID, SIZE, AND CONDITION INPUTS ----- #####
 # ------------------------------------------------------------------------------------------------- #
 
-# split file names and file paths 
-
 # output filepath
 out_head_tail = os.path.split(args.out)
 out_path = out_head_tail[0]              # define output file path 
@@ -80,172 +82,33 @@ elif '.' in out_path:
 else:
     output = out_path+'/'+out_name
 
-# set directories
+# Mapping conditions to prefixes
+cond_prefixes = {'yes': '_cond', 'no': ''}
+
+# Setting directories
 DIR = os.path.dirname(os.path.abspath(__file__))
 DATADIR = os.path.normpath(os.path.join(DIR, 'DATA'))
 OUTDIR = out_path
 GENESETDIR = os.path.normpath(os.path.join(DATADIR, 'GENESETS'))
 ANNOTDIR = os.path.normpath(os.path.join(DATADIR, 'MAGMA_ANNOT'))
 
-# set filepaths and minimum gene sets size if gene's are named using ENTREZ
-if args.id == 'entrez':
+# Filepath setup
+gene_id_conditions = ['entrez', 'ensembl', 'ensembl92']
 
-    if args.conditional == 'no':
-    
-        # set gene sets filepaths if setsize is default 
-        if args.setsize == 2:
-            solo = os.path.normpath(os.path.join(GENESETDIR, 'entrez_genesets.txt'))
-            atc = os.path.normpath(os.path.join(GENESETDIR, 'atc_entrez_sets.txt'))
-            moa = os.path.normpath(os.path.join(GENESETDIR, 'moa_entrez_sets.txt'))
-            ind = os.path.normpath(os.path.join(GENESETDIR, 'ind_entrez_sets.txt'))
+filepaths = {}
 
-        # set file paths for custom minimum gene set size 
-        else:
-            # create new gene set file for individual drug gene sets 
-            df.setsize(GENESETDIR,'/entrez_genesets.txt', args.setsize)
-            solo = os.path.normpath(os.path.join(GENESETDIR, 'tmp/entrez_genesets_min%d.txt' % args.setsize))
+for id in gene_id_conditions:
+    filepaths[id] = {
+        'solo': df.set_paths(f"solo_{id}", f"{cond_prefixes[args.conditional]}", args.setsize, GENESETDIR),
+        'atc': df.set_paths(f"atc_{id}", f"{cond_prefixes[args.conditional]}", args.setsize, GENESETDIR),
+        'moa': df.set_paths(f"moa_{id}", f"{cond_prefixes[args.conditional]}", args.setsize, GENESETDIR),
+        'ind': df.set_paths(f"ind_{id}", f"{cond_prefixes[args.conditional]}", args.setsize, GENESETDIR)
+    }
 
-            # create new gene set file for ATC III code gene sets 
-            df.setsize(GENESETDIR,'/atc_entrez_sets.txt', args.setsize)
-            atc = os.path.normpath(os.path.join(GENESETDIR, 'tmp/atc_entrez_sets_min%d.txt' % args.setsize))
-
-            # create new gene set file for MOA gene sets 
-            df.setsize(GENESETDIR,'/moa_entrez_sets.txt', args.setsize)
-            moa = os.path.normpath(os.path.join(GENESETDIR, 'tmp/moa_entrez_sets_min%d.txt' % args.setsize))
-
-            # create new gene set file for clinical indication gene sets 
-            df.setsize(GENESETDIR,'/ind_entrez_sets.txt', args.setsize)
-            ind = os.path.normpath(os.path.join(GENESETDIR, 'tmp/ind_entrez_sets_min%d.txt' % args.setsize))
-
-    elif args.conditional == 'yes':
-
-        # set gene sets filepaths if setsize is default 
-        if args.setsize == 2:
-            solo = os.path.normpath(os.path.join(GENESETDIR, 'entrez_cond_sets.txt'))
-            atc = os.path.normpath(os.path.join(GENESETDIR, 'atc_cond_sets.txt'))
-            moa = os.path.normpath(os.path.join(GENESETDIR, 'moa_cond_sets.txt'))
-            ind = os.path.normpath(os.path.join(GENESETDIR, 'ind_cond_sets.txt'))
-
-        # set file paths for custom minimum gene set size 
-        else:
-            # create new gene set file for individual drug gene sets 
-            df.setsize(GENESETDIR,'/entrez_cond_sets.txt', args.setsize)
-            solo = os.path.normpath(os.path.join(GENESETDIR, 'tmp/entrez_cond_sets_min%d.txt' % args.setsize))
-
-            # create new gene set file for ATC III code gene sets 
-            df.setsize(GENESETDIR,'/atc_cond_sets.txt', args.setsize)
-            atc = os.path.normpath(os.path.join(GENESETDIR, 'tmp/atc_cond_sets_min%d.txt' % args.setsize))
-
-            # create new gene set file for MOA gene sets 
-            df.setsize(GENESETDIR,'/moa_cond_sets.txt', args.setsize)
-            moa = os.path.normpath(os.path.join(GENESETDIR, 'tmp/moa_cond_sets_min%d.txt' % args.setsize))
-
-            # create new gene set file for clinical indication gene sets 
-            df.setsize(GENESETDIR,'/ind_cond_sets.txt', args.setsize)
-            ind = os.path.normpath(os.path.join(GENESETDIR, 'tmp/ind_cond_sets_min%d.txt' % args.setsize))
-
-# set filepaths and minimum gene sets size if gene's are named using ENSEMBL
-elif args.id == 'ensembl':
-    
-    if args.conditional == 'no':
-
-        # set gene sets filepaths if setsize is default 
-        if args.setsize == 2:
-            solo = os.path.normpath(os.path.join(GENESETDIR, 'ensembl_genesets.txt'))
-            atc = os.path.normpath(os.path.join(GENESETDIR, 'atc_ensembl_sets.txt'))
-            moa = os.path.normpath(os.path.join(GENESETDIR, 'moa_ensembl_sets.txt'))
-            ind = os.path.normpath(os.path.join(GENESETDIR, 'ind_ensembl_sets.txt'))
-
-        # set file paths for custom minimum gene set size 
-        else:
-            
-            df.setsize(GENESETDIR,'/ensembl_genesets.txt',args.setsize) # individual drug gene sets 
-            solo = os.path.normpath(os.path.join(GENESETDIR, 'tmp/ensembl__genesets_min%d.txt' % args.setsize))
-
-            df.setsize(GENESETDIR,'/atc_ensembl_sets.txt',args.setsize) # ATC code gene sets 
-            atc = os.path.normpath(os.path.join(GENESETDIR, 'tmp/atc_ensembl_sets_min%d.txt' % args.setsize))
-
-            df.setsize(GENESETDIR,'/moa_ensembl_sets.txt',args.setsize) # MOA gene sets 
-            moa = os.path.normpath(os.path.join(GENESETDIR, 'tmp/moa_ensembl_sets_min%d.txt' % args.setsize))
-
-            df.setsize(GENESETDIR,'/ind_ensembl_sets.txt',args.setsize) # clinical indication gene sets 
-            ind = os.path.normpath(os.path.join(GENESETDIR, 'tmp/ind_ensembl_sets_min%d.txt' % args.setsize))
-
-    elif args.conditional =='yes':
-
-        # set gene sets filepaths if setsize is default 
-        if args.setsize == 2:
-            solo = os.path.normpath(os.path.join(GENESETDIR, 'ensembl_cond_sets.txt'))
-            atc = os.path.normpath(os.path.join(GENESETDIR, 'atc_ensembl_cond_sets.txt'))
-            moa = os.path.normpath(os.path.join(GENESETDIR, 'moa_ensembl_cond_sets.txt'))
-            ind = os.path.normpath(os.path.join(GENESETDIR, 'ind_ensembl_cond_sets.txt'))
-
-        # set file paths for custom minimum gene set size 
-        else:
-            
-            df.setsize(GENESETDIR,'/ensembl_cond_sets.txt',args.setsize) # individual drug gene sets 
-            solo = os.path.normpath(os.path.join(GENESETDIR, 'tmp/ensembl__cond_sets_min%d.txt' % args.setsize))
-
-            df.setsize(GENESETDIR,'/atc_ensembl_cond_sets.txt',args.setsize) # ATC code gene sets 
-            atc = os.path.normpath(os.path.join(GENESETDIR, 'tmp/atc_ensembl_cond_sets_min%d.txt' % args.setsize))
-
-            df.setsize(GENESETDIR,'/moa_ensembl_cond_sets.txt',args.setsize) # MOA gene sets 
-            moa = os.path.normpath(os.path.join(GENESETDIR, 'tmp/moa_ensembl_cond_sets_min%d.txt' % args.setsize))
-
-            df.setsize(GENESETDIR,'/ind_ensembl_cond_sets.txt',args.setsize) # clinical indication gene sets 
-            ind = os.path.normpath(os.path.join(GENESETDIR, 'tmp/ind_ensembl_cond_sets_min%d.txt' % args.setsize))
-
-# set filepaths and minimum gene sets size if gene's are named using ENSEMBL
-elif args.id == 'ensembl92':
-    
-    if args.conditional == 'no':
-
-        # set gene sets filepaths if setsize is default 
-        if args.setsize == 2:
-            solo = os.path.normpath(os.path.join(GENESETDIR, 'ensembl_genesets92.txt'))
-            atc = os.path.normpath(os.path.join(GENESETDIR, 'atc_ensembl_sets92.txt'))
-            moa = os.path.normpath(os.path.join(GENESETDIR, 'moa_ensembl_sets92.txt'))
-            ind = os.path.normpath(os.path.join(GENESETDIR, 'ind_ensembl_sets92.txt'))
-
-        # set file paths for custom minimum gene set size 
-        else:
-            
-            df.setsize(GENESETDIR,'/ensembl_genesets92.txt',args.setsize)
-            solo = os.path.normpath(os.path.join(GENESETDIR, 'tmp/ensembl_genesets92_min%d.txt' % args.setsize))
-
-            df.setsize(GENESETDIR,'/atc_ensembl_sets92.txt',args.setsize)
-            atc = os.path.normpath(os.path.join(GENESETDIR, 'tmp/atcs_ensembl_sets92_min%d.txt' % args.setsize))
-
-            df.setsize(GENESETDIR,'/moa_ensembl_sets92.txt',args.setsize)
-            moa = os.path.normpath(os.path.join(GENESETDIR, 'tmp/moa_ensembl_sets92_min%d.txt' % args.setsize))
-
-            df.setsize(GENESETDIR,'/ind_ensembl_sets92.txt',args.setsize)
-            ind = os.path.normpath(os.path.join(GENESETDIR, 'tmp/ind_ensembl_sets92_min%d.txt' % args.setsize))
-
-    elif args.conditional == 'yes':
-
-        # set gene sets filepaths if setsize is default 
-        if args.setsize == 2:
-            solo = os.path.normpath(os.path.join(GENESETDIR, 'ensembl_cond_sets92.txt'))
-            atc = os.path.normpath(os.path.join(GENESETDIR, 'atc_ensembl_cond_sets92.txt'))
-            moa = os.path.normpath(os.path.join(GENESETDIR, 'moa_ensembl_cond_sets92.txt'))
-            ind = os.path.normpath(os.path.join(GENESETDIR, 'ind_ensembl_cond_sets92.txt'))
-
-        # set file paths for custom minimum gene set size 
-        else:
-            
-            df.setsize(GENESETDIR,'/ensembl_cond_sets92.txt',args.setsize)
-            solo = os.path.normpath(os.path.join(GENESETDIR, 'tmp/ensembl_cond_sets92_min%d.txt' % args.setsize))
-
-            df.setsize(GENESETDIR,'/atc_ensembl_cond_sets92.txt',args.setsize)
-            atc = os.path.normpath(os.path.join(GENESETDIR, 'tmp/atc_ensembl_cond_sets92_min%d.txt' % args.setsize))
-
-            df.setsize(GENESETDIR,'/moa_ensembl_cond_sets92.txt',args.setsize)
-            moa = os.path.normpath(os.path.join(GENESETDIR, 'tmp/moa_ensembl_cond_sets92_min%d.txt' % args.setsize))
-
-            df.setsize(GENESETDIR,'/ind_ensembl_cond_sets92.txt',args.setsize)
-            ind = os.path.normpath(os.path.join(GENESETDIR, 'tmp/ind_ensembl_cond_sets92_min%d.txt' % args.setsize))
-
+solo = filepaths[args.id]['solo']
+atc = filepaths[args.id]['atc']
+moa = filepaths[args.id]['moa']
+ind = filepaths[args.id]['ind']
 
 # set MAGMA annotation filepath
 if '\\' in args.geneassoc:
@@ -257,6 +120,15 @@ elif '/' in args.geneassoc or '\\' in args.geneassoc:                        # i
     annot = args.geneassoc
 else:
     annot = os.path.normpath(os.getcwd() + '/' + args.geneassoc)
+
+# set path for meta data pkl files
+if args.id == 'entrez':
+    metapath_pkl = os.path.normpath(os.path.join(DATADIR, 'entrez_meta.pkl'))
+elif args.id == 'ensembl':
+    metapath_pkl = os.path.normpath(os.path.join(DATADIR, 'ensembl105_meta.pkl'))
+elif args.id == 'ensembl92':
+    metapath_pkl = os.path.normpath(os.path.join(DATADIR, 'ensembl92_meta.pkl'))
+
     
 # ------------------------------------------------------ #
 ##### ----- PART 3: RUN DRUG GENE SET ANALYSIS ----- #####
@@ -308,9 +180,9 @@ for label  in analysis_labels:
 # print done
 print('Drug gene set analysis finished.\n')
 
-# ----------------------------------------------- #
-##### ----- PART 4: DRUG GROUP ANALYSIS ----- #####
-# ----------------------------------------------- #
+# -------------------------------------------------------------- #
+##### ----- PART 4: DRUG GROUP ENRICHMENT - REGRESSION ----- #####
+# -------------------------------------------------------------- #
 
 # enrichment analysis
 if args.enrich is not None:
@@ -373,4 +245,155 @@ if args.enrich is not None:
         print('To test for enrichment "-drugsets" must be set to "solo".')
 
 
+# ------------------------------------------------------- #
+##### ----- PART 5: DRUG GROUP ENRICHMENT - AUC ----- #####
+# ------------------------------------------------------- #
+
+if args.enrich_auc is not None:
+    if args.drugsets == 'solo':
+        
+        #print 
+        print('Running %s drug AUC analysis...\n\n' % (args.enrich_auc.upper()))
+        
+        # set file path for .gsa.out results file
+        gsa = (output+'_SOLO.gsa.out')
+
+        # load gsa results 
+        gsa_results = pd.read_csv(gsa, delimiter= "\s+", comment='#') 
+        
+        # load drug meta data
+        meta = pd.read_pickle(metapath_pkl)              
+        
+        # ----- ATC CODE ENRICHMENT ----- #
+        if args.enrich_auc in ('atc','all'):
+            
+            # print
+            print("ATC enrichment")
+            # explode atc
+            meta_atc = meta[meta['ATC3'].notna()]
+            meta_atc = meta_atc.explode('ATC3')
+            
+            # test for enrichment of ATC categories 
+            resultsATC, resultsBONFatc = df.enrich_auc(meta_atc, gsa_results, 'atc', args.nsize)
+
+            # save all results 
+            resultsPATHatc = os.path.normpath(os.path.join(OUTDIR, out_name+'.enrich_auc.atc.txt'))        # set filepath
+            print('\n\tSaving all results to %s' % (resultsPATHatc))                                       # print 
+            resultsATC.to_csv(resultsPATHatc, index = False, sep = '\t')                                   # save 
+
+            # add comments
+            with open(resultsPATHatc, 'w') as f:
+                f.write('# Group = drug category tested for enrichment\n')
+                f.write('# MWU = Wilcoxon Mann Whitney U statistic\n')
+                f.write('# P = P value from Wilcoxon Mann Whitney U test\n')
+                f.write('# AUC = area under the curve\n\n')
+            resultsATC.to_csv(resultsPATHatc, index = False, sep = '\t', mode = 'a')
+
+            # save bonferroni corrected results 
+            if resultsBONFatc.empty == False:
+
+                #print
+                bonfPATHatc = os.path.normpath(os.path.join(OUTDIR, out_name+'.enrich_auc.bonf.atc.txt'))        # set filepath
+                print('\tSaving Bonferroni significant results to %s\n' % (bonfPATHatc))                          # print
+                resultsBONFatc.to_csv(bonfPATHatc, index = False, sep = '\t')                                     # save 
+
+                # add comments
+                with open(bonfPATHatc, 'w') as f:
+                    f.write('# Group = drug category tested for enrichment\n')
+                    f.write('# MWU = Wilcoxon Mann Whitney U statistic\n')
+                    f.write('# P = P value from Wilcoxon Mann Whitney U test\n')
+                    f.write('# AUC = area under the curve\n\n')
+                resultsBONFatc.to_csv(bonfPATHatc, index = False, sep = '\t', mode = 'a')
+        
+        # ---- CLINICAL INDICATION ENRICHMENT ----- #         
+        if args.enrich_auc in ('ind','all'):
+
+            # print
+            print('Clinical indication enrichment')
+
+            # explode indication
+            meta_ind = meta.explode('indication')
+
+            # test for enrichment of ATC categories 
+            resultsIND, resultsBONFind = df.enrich_auc(meta_ind, gsa_results, 'ind', args.nsize)
+
+            # save all results 
+            resultsPATHind = os.path.normpath(os.path.join(OUTDIR, out_name+'.enrich_auc.ind.txt'))        # set filepath
+            print('\n\tSaving all results to %s' % (resultsPATHind))                          # print 
+            resultsIND.to_csv(resultsPATHind, index = False, sep = '\t')                                    # save 
+
+            # add comments
+            with open(resultsPATHind, 'w') as f:
+                f.write('# Group = drug category tested for enrichment\n')
+                f.write('# MWU = Wilcoxon Mann Whitney U statistic\n')
+                f.write('# P = P value from Wilcoxon Mann Whitney U test\n')
+                f.write('# AUC = area under the curve\n\n')
+            resultsIND.to_csv(resultsPATHind, index = False, sep = '\t', mode = 'a')
+
+            # save bonferroni corrected results 
+            if resultsBONFind.empty == False:
+
+                #print
+                bonfPATHind = os.path.normpath(os.path.join(OUTDIR, out_name+'.enrich_auc.bonf.ind.txt'))                       # set filepath
+                print('\tSaving Bonferroni significant results to %s\n' % (bonfPATHind))        # print
+                resultsBONFind.to_csv(bonfPATHind, index = False, sep = '\t')                                         # save 
+
+                # add comments 
+                with open(bonfPATHind, 'w') as f:
+                    f.write('# Group = drug category tested for enrichment\n')
+                    f.write('# MWU = Wilcoxon Mann Whitney U statistic\n')
+                    f.write('# P = P value from Wilcoxon Mann Whitney U test\n')
+                    f.write('# AUC = area under the curve\n\n')
+                resultsBONFind.to_csv(bonfPATHind, index = False, sep = '\t', mode = 'a')
+
+        # ---- MOA ENRICHMENT ----- #         
+        if args.enrich_auc in ('moa','all'):
+
+            # print
+            print("Mechanism of action enrichment")
+
+            # explode moa
+            meta_moa = meta.explode('moa')
+
+            # test for enrichment of ATC categories 
+            resultsMOA, resultsBONFmoa = df.enrich_auc(meta_moa, gsa_results, 'moa', args.nsize)
+            
+            # save all results 
+            resultsPATHmoa = os.path.normpath(os.path.join(OUTDIR, out_name+'.enrich_auc.moa.txt'))                 # set filepath
+            print('\n\tSaving all results to %s' % (resultsPATHmoa))                        # print 
+            resultsMOA.to_csv(resultsPATHmoa, index = False, sep = '\t')                              # save 
+
+            # add comments
+            with open(resultsPATHmoa, 'w') as f:
+                f.write('# Group = drug category tested for enrichment\n')
+                f.write('# MWU = Wilcoxon Mann Whitney U statistic\n')
+                f.write('# P = P value from Wilcoxon Mann Whitney U test\n')
+                f.write('# AUC = area under the curve\n\n')
+            resultsMOA.to_csv(resultsPATHmoa, index = False, sep = '\t', mode = 'a')
+
+            # save bonferroni corrected results 
+            if resultsBONFmoa.empty == False:
+
+                #print
+                bonfPATHmoa = os.path.normpath(os.path.join(OUTDIR, out_name+'.enrich_auc.bonf.moa.txt'))                                # set filepath
+                print('\tSaving Bonferroni significant results to %s\n' % (bonfPATHmoa))                 # print
+                resultsBONFmoa.to_csv(bonfPATHmoa, index = False, sep = '\t')                                              # save 
+
+                # add comments 
+                with open(bonfPATHmoa, 'w') as f:
+                    f.write('# Group = drug category tested for enrichment\n')
+                    f.write('# MWU = Wilcoxon Mann Whitney U statistic\n')
+                    f.write('# P = P value from Wilcoxon Mann Whitney U test\n')
+                    f.write('# AUC = area under the curve\n\n')
+                resultsBONFmoa.to_csv(bonfPATHmoa, index = False, sep = '\t', mode = 'a')
+
+        # remove new gene set files if created new 
+        # if args.setsize == 2:
+        #     next
+        # else:
+        #     subprocess.run('rm %s/*min%d.txt' % (GENESETDIR, args.setsize), shell=True)
+        # print finished 
+        print('\n\tEnrichment analysis finished.\n')
+    else: 
+        print('To test for enrichment "-drugsets" must be set to "solo".')
             
