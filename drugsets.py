@@ -1,399 +1,188 @@
-# python script to run drug gene set analysis 
+# DRUGSETS v2.0
+# Author: Nathan B.
+# Performs drug gene-set analysis using GWAS sumstats
 
-# -------------------------------------------------------------------------- #
-##### ----- PART 1: IMPORT PACKAGES, PARSE ARGUMENTS, CHECK INPUTS ----- #####
-# -------------------------------------------------------------------------- #
-
-# import packages 
+# import modules
 import os
 import argparse
 import pandas as pd
-import drugsets_func as df
+import logging
+from scipy import stats
+import drugsets_func as df_func
 
-# parse arguments 
-parser = argparse.ArgumentParser()
-parser.add_argument('--geneassoc', '-g', default=None, type=str,
-    help='Filename of gene associations from MAGMA (.genes.raw).',
-    required=True)
-parser.add_argument('--drugsets', '-d', default='solo', type=str, choices=['solo', 'atc', 'moa', 'ind', 'all'],
-    help='Type of drug gene set to use (individual, ATC code, mechanism of action, clinical indication).',
-    required=True)
-parser.add_argument('--out', '-o', default=None, type=str,
-    help='File path + prefix name of output file.',
-    required=True)
-parser.add_argument('--conditional', '-c', default='yes', type=str, choices=['yes','no'],
-    help='"yes" will run competitive gene-set analysis in MAGMA while conditioning on a gene set of all druggable genes, "no" will run competitive gene-set analysis without any conditional analysis',
-    required=False)
-parser.add_argument('--setsize', '-s', default=2, type=int,
-    help='Minimum drug gene set size. Minimum size is 2.',
-    required=False)
-parser.add_argument('--id', '-i', default='entrez', type=str, choices=['entrez', 'ensembl', 'ensembl92'],
-    help='Indicate which gene naming convention is used for your genes.raw file. Options are "entrez" and "ensembl v105", and "ensembl v92". \
-        If you ran MAGMA using FUMA, then use "ensembl92"',
-    required=False)   
-parser.add_argument('--enrich', '-e', default=None, type=str, choices=['atc', 'moa', 'ind', 'all'],
-    help='Test drug category for enrichment using linear regression model.',
-    required=False)
-parser.add_argument('--enrich_auc', '-auc', default=None, type=str, choices=['atc', 'moa', 'ind', 'all'],
-    help='Test drug category for enrichment using drug AUC.',
-    required=False)
-parser.add_argument('--nsize', '-n', default=5, type=float,
-    help = 'Set minimum sample size for drug categories being tested for enrichment.',
-    required=False)
-parser.add_argument('--correct', '-p', default='bonf', type=str, choices=['bonf', 'fdr'],
-    help = 'Select correction to be used for multiple testing for drug group enrichment: Bonferroni or FDR',
-    required=False)
+# Setup logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-# parse arguments 
-args = parser.parse_args()
+# drug set analysis class
+class DrugSetAnalysis:
+    def __init__(self, raw_file, drugsets, magma_path, out, conditional, setsize, gene_id, enrich, correct_cov, nsize, correct, use_pops=None, pops_mean_cov=True):
+        self.raw_file = raw_file
+        self.drugsets = drugsets
+        self.magma_path = magma_path
+        self.out = out
+        self.out_dir = os.path.dirname(out)
+        self.out_name = os.path.basename(out)
+        self.conditional = conditional
+        self.setsize = setsize
+        self.gene_id = gene_id
+        self.enrich = enrich
+        self.correct_cov = correct_cov
+        self.nsize = nsize
+        self.correct = correct
+        self.use_pops = use_pops
+        self.pops_mean_cov = pops_mean_cov
+        self.filepaths = self.set_filepaths()
 
-# print welcome
-print('\n| ----- Welcome to DRUGSETS v1.0 ----- |\n')
-print('Reading input...\n')
+    def set_filepaths(self):
+        cond_prefixes = {'yes': '_cond', 'no': ''}
+        gene_id_conditions = ['entrez', 'ensembl', 'ensembl92']
+        filepaths = {}
+        for gene_id in gene_id_conditions:
+            filepaths[gene_id] = {
+                'solo': df_func.set_paths(f"solo_{gene_id}", f"{cond_prefixes[self.conditional]}", self.setsize, GENESETDIR),
+                'atc': df_func.set_paths(f"atc_{gene_id}", f"{cond_prefixes[self.conditional]}", self.setsize, GENESETDIR),
+                'moa': df_func.set_paths(f"moa_{gene_id}", f"{cond_prefixes[self.conditional]}", self.setsize, GENESETDIR),
+                'ind': df_func.set_paths(f"ind_{gene_id}", f"{cond_prefixes[self.conditional]}", self.setsize, GENESETDIR)
+            }
+        return filepaths
 
-# check input data
-if args.geneassoc[-10:] == '.genes.raw':
-    next
-else:
-    print('ERROR: Gene association file does not end in ".genes.raw". Please check MAGMA gene association input file and try again.')
-    quit()
+    # TO DO: build in gene ID mapping to the .preds file (i.e., replace ENSGID w/ entrez depending on the .raw input file)
+    def normalize_pops_and_adjust_genes_out(self, magma_genes_out, pops_preds):
+        try:
+            pops_df = pd.read_csv(pops_preds, sep='\t')
+            pops_df['normed_pops'] = stats.zscore(pops_df['PoPS_Score'])
+            pops_df['pvalue'] = 2 * stats.norm.sf(abs(pops_df['normed_pops']))
+            magma_df = pd.read_csv(magma_genes_out, delimiter= "\s+", comment='#')
+            merged_df = magma_df.merge(pops_df[['ENSGID', 'normed_pops', 'pvalue']], left_on='GENE', right_on='ENSGID', how='inner')
+            merged_df.drop(columns=['ENSGID', 'ZSTAT', 'P'], inplace=True)
+            merged_df.rename(columns={'normed_pops': 'ZSTAT', 'pvalue': 'P'}, inplace=True)
+            adjusted_genes_out = os.path.join(self.out_dir, "adjusted.genes.out")
+            merged_df.to_csv(adjusted_genes_out, sep='\t', index=False)
+            return adjusted_genes_out
+        except Exception as e:
+            logging.error(f"Error processing PoPs data: {e}")
+            raise
+            
+    def run_analysis(self):
+        selected_filepath = self.filepaths[self.gene_id][self.drugsets]
+        # Set output labels for each chosen analysis
+        if self.drugsets == 'all':
+            analysis_labels = ['_SOLO', '_ATC', '_MOA', '_IND']
+        else:
+            analysis_labels = ['_' + self.drugsets.upper()]
+        # log labels
+        logging.info(f"Defined analysis label(s): {', '.join(analysis_labels)}")
+        # run
+        try:
+            logging.info("Starting drug gene set analysis...")
+            for label in analysis_labels:
+                if self.use_pops:
+                    magma_genes_out, pops_preds = self.use_pops
+                    adjusted_genes_out = self.normalize_pops_and_adjust_genes_out(magma_genes_out, pops_preds)
+                    if self.pops_mean_cov:
+                        cmd = f"{self.magma_path} --gene-results {self.raw_file} overwrite={adjusted_genes_out} --set-annot {selected_filepath} --gene-covar {pops_cov} --model condition-hide=mean_pops_norm --settings gene-info --out {self.out + label}"
+                    else:
+                        cmd = f"{self.magma_path} --gene-results {self.raw_file} overwrite={adjusted_genes_out} --set-annot {selected_filepath} --settings gene-info --out {self.out + label}"
+                else:
+                    cmd = f"{self.magma_path} --gene-results {self.raw_file} --set-annot {selected_filepath} --out {self.out + label}"
+                logging.info(f"Running MAGMA command with label {label}: {cmd}")
+                os.system(cmd)
+            logging.info("Drug gene set analysis completed successfully.")
+        except Exception as e:
+            logging.error(f"Analysis failed: {e}")
 
-# print input arguments
-print('Input arguments used:\n')
-for arg in vars(args):
-    print('\t', arg,'=', getattr(args, arg))
+    def enrichment(self):
+        selected_filepath = self.filepaths[self.gene_id][self.drugsets]
+        try:
+            if self.enrich:
+                if (self.drugsets == 'solo' or self.drugsets == 'all'):
+                    corrdata, metaRdata = df_func.compute_cor_matrix(self.raw_file, selected_filepath, self.out, self.out_name, self.out_dir, self.correct_cov)
+                    df_func.test_enrich(corrdata, metaRdata, self.out_name, self.out_dir, self.nsize, self.correct, self.enrich)
+                else:
+                    logging.error('To test for enrichment "--drugsets" must be set to "solo".')
+            else: 
+                logging.error('--enrich not specified.')
+    
+        except Exception as e:
+            logging.error(f"Drug enrichment failed: {e}")
 
-# ------------------------------------------------------------------------------------------------- #
-##### ----- PART 2: DEFINE FILEPATHS AND GENESETS BASED ON ID, SIZE, AND CONDITION INPUTS ----- #####
-# ------------------------------------------------------------------------------------------------- #
+# check if running directly
+if __name__ == "__main__":
+    
+    # parse input args
+    parser = argparse.ArgumentParser(description="Drug Gene Set Analysis using MAGMA.")
+    parser.add_argument("--raw_file", required=False, 
+                        help="Full path to MAGMA .raw file")
+    parser.add_argument("--drugsets", required=False, choices=['solo', 'atc', 'moa', 'ind', 'all'],
+                        help="Type of drug gene set to use (individual drug, ATC code, mechanism of action, clinical indication)")
+    parser.add_argument("--magma", required=False, default="magma", 
+                        help="Path to MAGMA executable")
+    parser.add_argument("--out", required=True, 
+                        help="Full path to output directory + file name prefix")
+    parser.add_argument("--conditional", required=False, default='yes', choices=['yes','no'], 
+                        help="Condition on all all druggable genes (recommended)?")
+    parser.add_argument("--enrich", required=False, default=None, choices=[None, 'atc', 'moa', 'ind', 'all'], 
+                        help="Specify drug group type to test for enrichment")
+    parser.add_argument("--correct_cov", required=False, default="TRUE", choices=["TRUE", "FALSE"], 
+                        help="Correct for drug gene set covariance during enrichment testing")
+    parser.add_argument("--setsize", type=int, default=5, 
+                        help="Minimum gene set size")
+    parser.add_argument("--gene_id", required=True, choices=['entrez','ensembl','ensembl92'], 
+                        help="Specify gene ID type used in MAGMA .raw file (for FUMA use 'ensembl92')")
+    parser.add_argument("--nsize", type=int, default=5, 
+                        help="Minimum drug group sample size for enrichment testing")
+    parser.add_argument("--correct", default='bonf', choices=['bonf', 'fdr'], 
+                        help="Multiple testing correction")
+    parser.add_argument("--use_pops", nargs=2, metavar=('MAGMA_GENES_OUT', 'POPS_PREDS'), 
+                        help="To use PoPs scores, please supply file paths to MAGMA .genes.out and PoPs .preds files")
+    parser.add_argument("--pops_mean_cov", type = bool, choices=[True, False], default=True,
+                        help="Condition on normalized PoPS scores across 111 UKB traits (default: True)")
+    parser.add_argument("--pops_cov_file", type = str, default='ensembl_mean_pops.cov',
+                        help="File with with PoPS score to condition on.")
 
-# output filepath
-out_head_tail = os.path.split(args.out)
-out_path = out_head_tail[0]              # define output file path 
-out_name = out_head_tail[1]              # define output file name
+    # parse input arguments 
+    args = parser.parse_args()
 
-# check out path
-if out_path == '':
-    out_path = os.getcwd()         # if no file path is given for the output it will put it all in the current working directory
-    output = out_path+'/'+out_name
-elif '.' in out_path:
-    out_path = out_path.replace('.', os.getcwd())       # replace '.' with full file path to avoid errors later on
-    output = out_path+'/'+out_name
-else:
-    output = out_path+'/'+out_name
+    # print welcome and perform input checks
+    df_func.welcome_check_inputs(args)
 
-# Mapping conditions to prefixes
-cond_prefixes = {'yes': '_cond', 'no': ''}
+    # Setting directories
+    DIR = os.path.dirname(os.path.abspath(__file__))
+    DATADIR = os.path.normpath(os.path.join(DIR, 'DATA'))
+    GENESETDIR = os.path.normpath(os.path.join(DATADIR, 'GENESETS'))
+    ANNOTDIR = os.path.normpath(os.path.join(DATADIR, 'MAGMA_ANNOT'))
+    COVDIR = os.path.normpath(os.path.join(DATADIR, 'COV'))
+    # OUT = os.path.normpath(args.out)
 
-# Setting directories
-DIR = os.path.dirname(os.path.abspath(__file__))
-DATADIR = os.path.normpath(os.path.join(DIR, 'DATA'))
-OUTDIR = out_path
-GENESETDIR = os.path.normpath(os.path.join(DATADIR, 'GENESETS'))
-ANNOTDIR = os.path.normpath(os.path.join(DATADIR, 'MAGMA_ANNOT'))
+    # Define PoPS covariate file
+    pops_cov = os.path.normpath(os.path.join(COVDIR, args.pops_cov_file))
 
-# Filepath setup
-gene_id_conditions = ['entrez', 'ensembl', 'ensembl92']
+    # set up analysis class
+    analysis = DrugSetAnalysis(
+        args.raw_file, 
+        args.drugsets, 
+        args.magma, 
+        args.out, 
+        args.conditional, 
+        args.setsize, 
+        args.gene_id, 
+        args.enrich, 
+        args.correct_cov, 
+        args.nsize, 
+        args.correct, 
+        args.use_pops,
+        args.pops_mean_cov
+    )
 
-filepaths = {}
+    # run drug gene set analysis
+    analysis.run_analysis()
 
-for id in gene_id_conditions:
-    filepaths[id] = {
-        'solo': df.set_paths(f"solo_{id}", f"{cond_prefixes[args.conditional]}", args.setsize, GENESETDIR),
-        'atc': df.set_paths(f"atc_{id}", f"{cond_prefixes[args.conditional]}", args.setsize, GENESETDIR),
-        'moa': df.set_paths(f"moa_{id}", f"{cond_prefixes[args.conditional]}", args.setsize, GENESETDIR),
-        'ind': df.set_paths(f"ind_{id}", f"{cond_prefixes[args.conditional]}", args.setsize, GENESETDIR)
-    }
+    # run enrichment (if specified)
+    analysis.enrichment()
 
-solo = filepaths[args.id]['solo']
-atc = filepaths[args.id]['atc']
-moa = filepaths[args.id]['moa']
-ind = filepaths[args.id]['ind']
-
-# set MAGMA annotation filepath
-if '\\' in args.geneassoc:
-    print(not'/' in args.geneassoc or not '\\' in args.geneassoc)
-
-if './' in args.geneassoc or '.\\' in args.geneassoc:
-    annot = args.geneassoc.replace('.', os.getcwd(),1)
-elif '/' in args.geneassoc or '\\' in args.geneassoc:                        # if no file path is given for the .genes.raw file it assumes it is in the working directory
-    annot = args.geneassoc
-else:
-    annot = os.path.normpath(os.getcwd() + '/' + args.geneassoc)
-
-# set path for meta data pkl files
-if args.id == 'entrez':
-    metapath_pkl = os.path.normpath(os.path.join(DATADIR, 'entrez_meta.pkl'))
-elif args.id == 'ensembl':
-    metapath_pkl = os.path.normpath(os.path.join(DATADIR, 'ensembl105_meta.pkl'))
-elif args.id == 'ensembl92':
-    metapath_pkl = os.path.normpath(os.path.join(DATADIR, 'ensembl92_meta.pkl'))
+    # print 
+    df_func.print_ending_message()
 
     
-# ------------------------------------------------------ #
-##### ----- PART 3: RUN DRUG GENE SET ANALYSIS ----- #####
-# ------------------------------------------------------ #
-
-# individual drug gene set analysis
-#Set output labels for each chosen analysis
-if args.drugsets == 'all':
-    analysis_labels = ['_SOLO','_ATC', '_MOA', '_IND']
-else:
-    analysis_labels = ['_' + args.drugsets.upper()]
-
-#Loop over each analysis output label and match input file for corresponding analysis
-for label  in analysis_labels:
-    if label == '_SOLO':
-        analysis = solo
-    elif label == '_ATC':
-        analysis = atc
-    elif label == '_MOA':
-        analysis = moa
-    elif label == '_IND':
-        analysis = ind
-
-    if args.conditional == 'no':
-        print('\nRunning %s drug gene set analysis in MAGMA...\n' % (label.strip('_')))
-        df.run_task('magma --gene-results %s --set-annot %s --settings gene-info --out %s' % (annot, analysis, os.path.normpath((output + label))))
-        
-        # print log 
-        warnings = open(os.path.normpath(f'{output+label}.log')).read().count('WARNING:')
-        print('\n\t%s warnings found (see %s.log for details)' % (int(warnings), os.path.normpath((output + label))))
-
-        # print result locations 
-        print('\tResults for all drug gene sets saving to %s' % (os.path.normpath(OUTDIR+'/%s.gsa.out' % (out_name + label))))
-        print('\tResults for significant drug gene sets saving to %s\n' % (os.path.normpath(OUTDIR+'/%s.gsa.set.genes.out' % (out_name + label))))
-
-    elif args.conditional == 'yes':
-        
-        print('\nRunning conditional %s drug gene set analysis in MAGMA...\n' % (label.strip('_')))
-        df.run_task('magma --gene-results %s --set-annot %s --settings gene-info --model condition=druggable --out %s' % (annot, analysis, os.path.normpath((output + label))))
-        
-        # print log 
-        warnings = open(os.path.normpath(f'{output+label}.log')).read().count('WARNING:')
-        print('\n\t%s warnings found (see %s.log for details)' % (int(warnings), os.path.normpath((output + label))))
-
-        # print result locations 
-        print('\tResults for all drug gene sets saving to %s' % (os.path.normpath(OUTDIR+'/%s.gsa.out' % (out_name + label))))
-        print('\tResults for significant drug gene sets saving to %s\n' % (os.path.normpath(OUTDIR+'/%s.gsa.set.genes.out' % (out_name + label))))
-
-# print done
-print('Drug gene set analysis finished.\n')
-
-# -------------------------------------------------------------- #
-##### ----- PART 4: DRUG GROUP ENRICHMENT - REGRESSION ----- #####
-# -------------------------------------------------------------- #
-
-# enrichment analysis
-if args.enrich is not None:
-
-    if (args.drugsets == 'solo' or args.drugsets == 'all'):
-
-        # set full file paths for .raw file, gene set file
-        working = os.path.dirname(os.path.abspath(__file__)) + '/'
-        
-        #print 
-        print('Running %s enrichment analysis...\n\n' % (args.enrich.upper()))
-
-        # set file path for .gsa.out results file
-        if os.path.exists(os.path.normpath((output+'_SOLO'+'.gsa.out'))):
-            gsa = os.path.normpath((output+'_SOLO'+'.gsa.out'))
-        elif os.path.exists(os.path.normpath((output+'_SOLO'+'.gsa.out.txt'))):
-            gsa = os.path.normpath((output+'_SOLO'+'.gsa.out.txt'))              
-
-        # compute covariance 
-        print('\tComputing correlation matrix...')
-        df.run_task_r('Rscript --vanilla %s %s %s %s %s %s' % (os.path.normpath(working+'compute_corrs.R'), annot, os.path.normpath(solo), (gsa), os.path.normpath('/'+out_name), OUTDIR)) 
-
-        # define filepath to set.corrs.rdata and to metadata.rdata file
-        corrdata = os.path.normpath(out_path+'/'+'%s_setcorrs.rdata' % out_name)
-        metaRdata = os.path.normpath(working+'DATA/metadata.rdata')
-
-        # run either one group or all 
-
-        if args.enrich != 'all':
-            
-            # compute dependent linear regression
-            print('\tRunning dependent linear regression model...')
-            df.run_task_r('Rscript --vanilla %s %s %s %s %s %s %s %s' % (os.path.normpath(working+'compute_lnreg.R'), corrdata, metaRdata, args.enrich.lower(), args.nsize, out_name, (OUTDIR+os.path.sep), args.correct))
-
-        elif args.enrich == 'all':
-            
-            # define groups to loop through 
-            groups = ['atc','moa','ind']
-
-            # loop though types of drug groups and run dependent linear regression model for each type
-            for g in groups:
-
-                # compute dependent linear regression
-                print('\tRunning dependent linear regression model for %s groups...' % g.upper())
-                df.run_task_r('Rscript --vanilla %s %s %s %s %s %s %s %s' % (os.path.normpath(working+'compute_lnreg.R'), corrdata, metaRdata, g, args.nsize, (out_name+'_'+g.upper()), (OUTDIR+os.path.sep), args.correct))
-
-        # remove correlation matrix file
-        os.remove(corrdata)
-
-        # remove new gene set files if created new 
-        # if args.setsize == 2:
-        #     next
-        # else:
-        #     subprocess.run('rm %s/*min%d.txt' % (GENESETDIR, args.setsize), shell=True)
-
-        # print finished 
-        print('\nEnrichment analysis finished.\n')
-
-    else: 
-        print('To test for enrichment "-drugsets" must be set to "solo".')
 
 
-# ------------------------------------------------------- #
-##### ----- PART 5: DRUG GROUP ENRICHMENT - AUC ----- #####
-# ------------------------------------------------------- #
-
-if args.enrich_auc is not None:
-    if args.drugsets == 'solo':
-        
-        #print 
-        print('Running %s drug AUC analysis...\n\n' % (args.enrich_auc.upper()))
-        
-        # set file path for .gsa.out results file
-        gsa = (output+'_SOLO.gsa.out')
-
-        # load gsa results 
-        gsa_results = pd.read_csv(gsa, delimiter= "\s+", comment='#') 
-        
-        # load drug meta data
-        meta = pd.read_pickle(metapath_pkl)              
-        
-        # ----- ATC CODE ENRICHMENT ----- #
-        if args.enrich_auc in ('atc','all'):
-            
-            # print
-            print("ATC enrichment")
-            # explode atc
-            meta_atc = meta[meta['ATC3'].notna()]
-            meta_atc = meta_atc.explode('ATC3')
-            
-            # test for enrichment of ATC categories 
-            resultsATC, resultsBONFatc = df.enrich_auc(meta_atc, gsa_results, 'atc', args.nsize)
-
-            # save all results 
-            resultsPATHatc = os.path.normpath(os.path.join(OUTDIR, out_name+'.enrich_auc.atc.txt'))        # set filepath
-            print('\n\tSaving all results to %s' % (resultsPATHatc))                                       # print 
-            resultsATC.to_csv(resultsPATHatc, index = False, sep = '\t')                                   # save 
-
-            # add comments
-            with open(resultsPATHatc, 'w') as f:
-                f.write('# Group = drug category tested for enrichment\n')
-                f.write('# MWU = Wilcoxon Mann Whitney U statistic\n')
-                f.write('# P = P value from Wilcoxon Mann Whitney U test\n')
-                f.write('# AUC = area under the curve\n\n')
-            resultsATC.to_csv(resultsPATHatc, index = False, sep = '\t', mode = 'a')
-
-            # save bonferroni corrected results 
-            if resultsBONFatc.empty == False:
-
-                #print
-                bonfPATHatc = os.path.normpath(os.path.join(OUTDIR, out_name+'.enrich_auc.bonf.atc.txt'))        # set filepath
-                print('\tSaving Bonferroni significant results to %s\n' % (bonfPATHatc))                          # print
-                resultsBONFatc.to_csv(bonfPATHatc, index = False, sep = '\t')                                     # save 
-
-                # add comments
-                with open(bonfPATHatc, 'w') as f:
-                    f.write('# Group = drug category tested for enrichment\n')
-                    f.write('# MWU = Wilcoxon Mann Whitney U statistic\n')
-                    f.write('# P = P value from Wilcoxon Mann Whitney U test\n')
-                    f.write('# AUC = area under the curve\n\n')
-                resultsBONFatc.to_csv(bonfPATHatc, index = False, sep = '\t', mode = 'a')
-        
-        # ---- CLINICAL INDICATION ENRICHMENT ----- #         
-        if args.enrich_auc in ('ind','all'):
-
-            # print
-            print('Clinical indication enrichment')
-
-            # explode indication
-            meta_ind = meta.explode('indication')
-
-            # test for enrichment of ATC categories 
-            resultsIND, resultsBONFind = df.enrich_auc(meta_ind, gsa_results, 'ind', args.nsize)
-
-            # save all results 
-            resultsPATHind = os.path.normpath(os.path.join(OUTDIR, out_name+'.enrich_auc.ind.txt'))        # set filepath
-            print('\n\tSaving all results to %s' % (resultsPATHind))                          # print 
-            resultsIND.to_csv(resultsPATHind, index = False, sep = '\t')                                    # save 
-
-            # add comments
-            with open(resultsPATHind, 'w') as f:
-                f.write('# Group = drug category tested for enrichment\n')
-                f.write('# MWU = Wilcoxon Mann Whitney U statistic\n')
-                f.write('# P = P value from Wilcoxon Mann Whitney U test\n')
-                f.write('# AUC = area under the curve\n\n')
-            resultsIND.to_csv(resultsPATHind, index = False, sep = '\t', mode = 'a')
-
-            # save bonferroni corrected results 
-            if resultsBONFind.empty == False:
-
-                #print
-                bonfPATHind = os.path.normpath(os.path.join(OUTDIR, out_name+'.enrich_auc.bonf.ind.txt'))                       # set filepath
-                print('\tSaving Bonferroni significant results to %s\n' % (bonfPATHind))        # print
-                resultsBONFind.to_csv(bonfPATHind, index = False, sep = '\t')                                         # save 
-
-                # add comments 
-                with open(bonfPATHind, 'w') as f:
-                    f.write('# Group = drug category tested for enrichment\n')
-                    f.write('# MWU = Wilcoxon Mann Whitney U statistic\n')
-                    f.write('# P = P value from Wilcoxon Mann Whitney U test\n')
-                    f.write('# AUC = area under the curve\n\n')
-                resultsBONFind.to_csv(bonfPATHind, index = False, sep = '\t', mode = 'a')
-
-        # ---- MOA ENRICHMENT ----- #         
-        if args.enrich_auc in ('moa','all'):
-
-            # print
-            print("Mechanism of action enrichment")
-
-            # explode moa
-            meta_moa = meta.explode('moa')
-
-            # test for enrichment of ATC categories 
-            resultsMOA, resultsBONFmoa = df.enrich_auc(meta_moa, gsa_results, 'moa', args.nsize)
-            
-            # save all results 
-            resultsPATHmoa = os.path.normpath(os.path.join(OUTDIR, out_name+'.enrich_auc.moa.txt'))                 # set filepath
-            print('\n\tSaving all results to %s' % (resultsPATHmoa))                        # print 
-            resultsMOA.to_csv(resultsPATHmoa, index = False, sep = '\t')                              # save 
-
-            # add comments
-            with open(resultsPATHmoa, 'w') as f:
-                f.write('# Group = drug category tested for enrichment\n')
-                f.write('# MWU = Wilcoxon Mann Whitney U statistic\n')
-                f.write('# P = P value from Wilcoxon Mann Whitney U test\n')
-                f.write('# AUC = area under the curve\n\n')
-            resultsMOA.to_csv(resultsPATHmoa, index = False, sep = '\t', mode = 'a')
-
-            # save bonferroni corrected results 
-            if resultsBONFmoa.empty == False:
-
-                #print
-                bonfPATHmoa = os.path.normpath(os.path.join(OUTDIR, out_name+'.enrich_auc.bonf.moa.txt'))                                # set filepath
-                print('\tSaving Bonferroni significant results to %s\n' % (bonfPATHmoa))                 # print
-                resultsBONFmoa.to_csv(bonfPATHmoa, index = False, sep = '\t')                                              # save 
-
-                # add comments 
-                with open(bonfPATHmoa, 'w') as f:
-                    f.write('# Group = drug category tested for enrichment\n')
-                    f.write('# MWU = Wilcoxon Mann Whitney U statistic\n')
-                    f.write('# P = P value from Wilcoxon Mann Whitney U test\n')
-                    f.write('# AUC = area under the curve\n\n')
-                resultsBONFmoa.to_csv(bonfPATHmoa, index = False, sep = '\t', mode = 'a')
-
-        # remove new gene set files if created new 
-        # if args.setsize == 2:
-        #     next
-        # else:
-        #     subprocess.run('rm %s/*min%d.txt' % (GENESETDIR, args.setsize), shell=True)
-        # print finished 
-        print('\n\tEnrichment analysis finished.\n')
-    else: 
-        print('To test for enrichment "-drugsets" must be set to "solo".')
-            

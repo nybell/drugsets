@@ -1,6 +1,7 @@
 ##### ----- SETWD, LOAD DATA, PACKAGES ----- #####
 
 args = commandArgs(trailingOnly = TRUE)  # setcorrs.rdata  (1), metadata (2), group tested (3), setsize (4), out (5), outdir (6) 
+# {corrdata} {metaRdata} {group} {nsize} {out_name}_{group.upper()} {out_dir} {correct}
 
 # # for testing purposes
 # setwd('~/drugsets/')
@@ -8,12 +9,16 @@ args = commandArgs(trailingOnly = TRUE)  # setcorrs.rdata  (1), metadata (2), gr
 # load('/Users/nyb/drugsets/DATA/metadata.rdata')
 
 # library
-library(tidyr)
-library(dplyr)
+suppressMessages(library(tidyr))
+suppressMessages(library(dplyr))
 # library(FSA)
 
 # load data from compute_corrs.r
 load(args[1])
+
+# assign vars
+set.info = corr.data[["set.info"]]
+cov.matrix = corr.data[["cov.matrix"]]
 
 # load gene set meta 
 load(args[2])
@@ -40,21 +45,21 @@ if (tolower(args[3]) == 'atc') {
 ##### ----- FUNCTIONS ----- #####
 
 # function to run multiple linear regression
-lnreg_dep <- function(X, set.corrs.inv, y) {
+lnreg_dep <- function(X, cov.matrix, y) {
   
-  N = length(y); K = ncol(X) # define N & K
-  df <- (N - K)              # calculate degrees of freedom 
-  Xt <- t(X)                 # tranpose X 
-  W <- solve(Xt %*% set.corrs.inv %*% X)     # compute W matrix 
-  B <- W %*% Xt %*% set.corrs.inv %*% y      # compute beta 
-  sigma2 <- (t(y - (X %*% B)) %*% set.corrs.inv %*% (y - (X %*% B))) / df     # compute sigma squared
-  t <- B[2] / sqrt(sigma2 * W[2,2])                    # compute test statistic 
-  p <- pt(t, df, lower.tail = F)                 # compute two tailed p-value for test stat: add abs(), *2 for two-tailed
-  se <- sqrt(sigma2 * W[2,2])         # /sqrt(N) calculate standard error
-  error <- qt(0.975,df=(N-K))*se     # calculate error margin
-  left <- (B[2] - error)                               # calculate lower bound of ci
-  right <- (B[2] + error)                              # calculate upper bound of ci
-  ci <- c(left,right)                 # confidence interval              
+  N = length(y); K = ncol(X)                                                  # define N & K
+  df <- (N - K)                                                               # calculate degrees of freedom 
+  Xt <- t(X)                                                                  # tranpose X 
+  W <- solve(Xt %*% cov.matrix %*% X)                                      # compute W matrix 
+  B <- W %*% Xt %*% cov.matrix %*% y                                       # compute beta 
+  sigma2 <- (t(y - (X %*% B)) %*% cov.matrix %*% (y - (X %*% B))) / df     # compute sigma squared
+  t <- B[2] / sqrt(sigma2 * W[2,2])                                           # compute test statistic 
+  p <- pt(t, df, lower.tail = F)              # compute two tailed p-value for test stat: add abs(), *2 for two-tailed
+  se <- sqrt(sigma2 * W[2,2])                                                 # /sqrt(N) calculate standard error
+  error <- qt(0.975,df=(N-K))*se                                              # calculate error margin
+  left <- (B[2] - error)                                                      # calculate lower bound of ci
+  right <- (B[2] + error)                                                     # calculate upper bound of ci
+  ci <- c(left,right)                                                         # confidence interval              
 
   # save results 
   results <- c(B[2],se,ci,t,df,p)
@@ -94,7 +99,7 @@ for (code in codes) {
     X <- cbind(ones,s,size,log(size))
     
     # get results 
-    outcome <- lnreg_dep(X, set.corrs.inv, y)
+    outcome <- lnreg_dep(X, cov.matrix, y)
     
     # paste results with code 
     outcome <- append(code,outcome)
@@ -128,19 +133,21 @@ if (args[7] == 'bonf') {
 }
 
 # save results 
-write.table(results, sprintf('%slnreg.%s.%s.csv', args[6], args[3], args[5]), row.names = FALSE, sep=',', quote = FALSE)   # raw 
+write.table(results, file.path(args[6], sprintf('lnreg.%s.csv', args[5])), row.names = FALSE, sep=',', quote = FALSE)
 
 # save corrected results
 if (args[7] == 'bonf') {
   if (nrow(results_bonf) > 0) {
-    write.table(results_bonf, sprintf('%slnreg.%s.%s.%s.csv',args[6], args[7], args[3], args[5]), row.names = FALSE, sep=',', quote = FALSE)  # Bonf
+    write.table(results_bonf, file.path(args[6], sprintf('lnreg.%s.%s.csv', args[7], args[5])), row.names = FALSE, sep=',', quote = FALSE)
   }
 } else if (args[7] == 'fdr') {
   if (nrow(results_fdr) > 0) {
-    write.table(results_fdr, sprintf('%slnreg.%s.%s.%s.csv',args[6], args[7], args[3], args[5]), row.names = FALSE, sep=',', quote = FALSE)  # Bonf
+    write.table(results_fdr, file.path(args[6], sprintf('lnreg.%s.%s.csv', args[7], args[5])), row.names = FALSE, sep=',', quote = FALSE)
   }
 }
 
+
+# args: 1:{corrdata} 2:{metaRdata} 3:{group} 4:{nsize} 5:{out_name}_{group.upper()} 6:{out_dir} 7:{correct}
 ##### ----- END ----- #####
 
 

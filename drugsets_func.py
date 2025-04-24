@@ -1,98 +1,80 @@
-#drugsea_func.py>
-
-# import packages 
-import os
-import subprocess
-import numpy as np
 import pandas as pd
-from tqdm import tqdm
-from scipy import stats
-from sklearn.metrics import roc_curve, auc
-from subprocess import Popen, PIPE, CalledProcessError
+import logging
+import os
+import scipy.stats as stats
 
-# function to test for enrichment of significant drug using Wilcoxon Mann Whitney U test
-def testMWU(data, group, subgroup):     # inputs: data = data; set subgroup = name of subgroup (e.g., 'N05A' within all ATC groups); group = string of group (e.g., 'ATC3')
-    x = data[data[group]==subgroup]
-    x = x['P']
-    y = data[data[group]!=subgroup]
-    y = y['P']
-    return stats.mannwhitneyu(x, y, use_continuity=True, alternative='greater', axis=0, method='auto')
+# Setup logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-# define function to calculate AUC 
-def drugAUC(data, group, subgroup):
-    y_score = data['P']
-    y_true = data[group]==subgroup                                      
-    y_true = y_true*1
-    fpr, tpr, threshold = roc_curve(y_true,y_score)
-    roc_auc = auc(fpr,tpr)
-    return roc_auc
+# function for welcome message and printing input arguments
+def welcome_check_inputs(args):
+    welcome_text = """
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+    ┃      🚀 Welcome to DRUGSETS v2.0!     ┃
+    ┃      Identify GWAS-enriched drugs     ┃
+    ┃       with drug gene-set analysis     ┃
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+    """
+    # Print welcome message
+    print(welcome_text)
+    print("🔍 Reading input...\n")
+    
+    # Print input arguments
+    print("📌 Input arguments used:")
+    for arg, value in vars(args).items():
+        print(f"   🔹 {arg} = {value}")
+    
+    # Input validation checks
+    errors = []
 
-# define function for enrichment of drug groups within the drug gene set analysis results
-def enrich_auc(data, results, group, nsize):
-            # merge MAGMA results data with drug meta data 
-            mergedData = data.merge(results, how = "right", left_on = "DRUG", right_on = "VARIABLE")
-            mergedData['P'] = abs(np.log10(mergedData['P']))
-            mergedData = mergedData.sort_values(by=['P'], ascending=False)
+    # Check #1: Validate raw_file extension
+    if not args.raw_file.endswith('.genes.raw'):
+        errors.append("❌ ERROR: Gene association file does not end in '.genes.raw'. Please check the MAGMA gene association input file and try again.")
+    
+    # Check #2: Validate gene_id when use_pops is enabled
+    if args.use_pops is not None and args.gene_id not in ["ensembl", "ensembl92"]:
+        errors.append("⚠️ WARNING: To use PoPs results, please use '.raw' and '.genes.out' files with Ensembl IDs ('ensembl' or 'ensembl92').")
 
-            # drop rows with NA drug names and explode ATC III classifications 
-            mergedData = mergedData[mergedData['DRUG'].notna()]
+    # Print error messages if any checks failed
+    if errors:
+        print("\n🚨 Input Validation Issues:")
+        for error in errors:
+            print(error)
+        print("\n🔴 Exiting due to input errors.\n")
+        quit()
 
-            if group == 'atc':
-                mergedData = mergedData.explode('ATC3')
-                mergedData = mergedData.rename(columns={'ATC3':'atc'})
-
-            if group == 'ind':
-                mergedData = mergedData.rename(columns={'indication':'ind'})
+    # Print initialization message if all checks pass
+    print("\n✅ Initialization complete. Starting analysis. 💊💡\n")
 
 
-            # Categories 
-            codes = pd.DataFrame(mergedData[group].value_counts())
-            codes.reset_index(level=0, inplace=True)
-            codes = codes[codes[group] >= nsize]
+# function for normalizing PoPs scores and merging with MAGMA genes.out
+def normalize_pops_and_adjust_genes_out(magma_genes_out, pops_preds, output_dir):
+    """Normalize PoPs scores, compute p-values, and merge with MAGMA genes.out."""
+    try:
+        pops_df = pd.read_csv(pops_preds, sep='\t')
+        logging.info(f"Loaded PoPs results from {pops_preds}. Shape: {pops_df.shape}")
 
-            if codes.empty:
-                print('ERROR: No drug categories have a sample size higher than %d. Please try again with lower input argument for "--nsize".\n\n' % nsize)
-                quit()
+        pops_df['normed_pops'] = stats.zscore(pops_df['PoPS_Score'])
+        pops_df['pvalue'] = 2 * stats.norm.sf(abs(pops_df['normed_pops']))
 
-            # run testMWU for every ATC III code with more than 5 drugs and then store in variable 
-            results = []
+        magma_df = pd.read_csv(magma_genes_out, sep='\t')
+        logging.info(f"Loaded MAGMA genes.out from {magma_genes_out}. Shape: {magma_df.shape}")
 
-            for code in tqdm(codes['index']):
+        merged_df = magma_df.merge(pops_df[['ENSGID', 'normed_pops', 'pvalue']], 
+                                   left_on='GENE', right_on='ENSGID', how='inner')
 
-                # test for enrichment using WMW U test
-                mwu, p = testMWU(mergedData, group, code)      
+        merged_df.drop(columns=['ZSTAT', 'P'], inplace=True)
+        merged_df.rename(columns={'normed_pops': 'ZSTAT', 'pvalue': 'P'}, inplace=True)
 
-                # calculate AUC enrichment curves
-                roc_auc = drugAUC(mergedData, group, code)
+        adjusted_genes_out = os.path.join(output_dir, "pops.adjusted.genes.out")
+        merged_df.to_csv(adjusted_genes_out, sep='\t', index=False)
+        logging.info(f"Saved adjusted MAGMA genes.out file: {adjusted_genes_out}")
 
-                # append to results
-                result = [code,mwu,p, roc_auc]
-                results.append(result)
+        return adjusted_genes_out
 
-            # convert to csv file
-            results = pd.DataFrame(results, columns = ['GROUP', 'MWU','P', 'AUC'])
-
-            # bonferroni correct ATC results git status
-            bonf = 0.05/len(codes)
-            resultsBONF = results[results['P'] < bonf]
-
-            # return results 
-            return results, resultsBONF
-
-# define function to run commands in terminal
-def run_task(cmd):
-    with Popen(cmd, shell=True, stdout=PIPE, bufsize=1, universal_newlines=True) as p:
-        for b in tqdm(p.stdout):
-            # print(b, end='') # b is the byte from stdout
-            next
-
-    if p.returncode != 0:
-        raise CalledProcessError(p.returncode, p.args)
-
-def run_task_r(cmd):
-    cmd= cmd.split('.R ')
-    cmd = cmd[0] + '.R ' + cmd[1].replace('\\','\\\\')
-    subprocess.run(cmd, shell=True, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception as e:
+        logging.error(f"Error processing PoPs data: {e}")
+        raise
 
 # define function to create new gene set file with custom size
 def setsize(path, file, size):
@@ -119,5 +101,60 @@ def set_paths(prefix, cond, set_size, GENESETDIR):
         return base
 
     # For custom minimum gene set size
-    setsize(GENESETDIR, f"/{prefix}_{cond}_sets.txt", set_size)
+    setsize(GENESETDIR, f"/{prefix}{cond}_sets.txt", set_size)
     return os.path.normpath(os.path.join(GENESETDIR, f"tmp/{prefix}{cond}_sets_min{set_size}.txt"))
+
+# function for computing correlation matrix
+def compute_cor_matrix(raw_file, solo, output, out_name, out_dir, correct_cov):
+    working = os.path.dirname(os.path.abspath(__file__))
+    # working = "/Users/nyb/drugsets"
+
+    gsa = None
+    for ext in ['.gsa.out', '.gsa.out.txt']:
+        path = os.path.normpath(f"{output}_SOLO{ext}")
+        if os.path.exists(path):
+            gsa = path
+            print(gsa)
+            break
+    if not gsa:
+        raise FileNotFoundError("GSA output file not found.")
+
+    logging.info("Computing correlation matrix...")
+    cmd_corr = f"Rscript --vanilla {os.path.join(working, 'compute_corrs.R')} {raw_file} {solo} {gsa} {out_name} {out_dir} {correct_cov}"
+    logging.info(f"Running command: {cmd_corr}")
+    os.system(cmd_corr)
+
+    corrdata = os.path.normpath(os.path.join(out_dir, f"{out_name}_setcorrs.rdata"))
+    metaRdata = os.path.normpath(os.path.join(working, 'DATA', 'metadata.rdata'))
+
+    return corrdata, metaRdata
+
+# function for running linear regression enrichment analysis
+def test_enrich(corrdata, metaRdata, out_name, out_dir, nsize, correct, enrich_type):
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    def run_lnreg(group):
+        logging.info(f"Running linear regression for {group}...")
+        cmd_lnreg = f"Rscript --vanilla {os.path.join(BASE_DIR, 'compute_lnreg.R')} {corrdata} {metaRdata} {group} {nsize} {out_name}_{group.upper()} {out_dir} {correct}"
+        logging.info(f"Running command: {cmd_lnreg}")
+        os.system(cmd_lnreg)
+
+    if enrich_type != 'all':
+        run_lnreg(enrich_type)
+    else:
+        for group in ['atc', 'moa', 'ind']:
+            run_lnreg(group)
+
+    # os.remove(corrdata)
+    logging.info("Enrichment analysis finished.")
+
+def print_ending_message():
+    ending_text = """
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+    ┃   🎉 Analysis Complete! 🚀            ┃
+    ┃   Your drug enrichment results are    ┃
+    ┃   ready for interpretation. 💊📊      ┃
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+    """
+    
+    print(ending_text)
+    print("\n🔥 Thank you for using DRUGSETS v2.0! 🔥\n")
