@@ -3,43 +3,72 @@
 args = commandArgs(trailingOnly = TRUE)  # setcorrs.rdata  (1), metadata (2), group tested (3), setsize (4), out (5), outdir (6) 
 # {corrdata} {metaRdata} {group} {nsize} {out_name}_{group.upper()} {out_dir} {correct}
 
-# # for testing purposes
-# setwd('~/drugsets/')
-# load('test_t2d.rdata')
-# load('/Users/nyb/drugsets/DATA/metadata.rdata')
-
 # library
 suppressMessages(library(tidyr))
 suppressMessages(library(dplyr))
-# library(FSA)
+
+# assign input args
+corr.data.path    = as.character(args[1])
+meta.data.path    = as.character(args[2])
+test.group        = as.character(args[3])
+setsize           = as.numeric(args[4])
+out.name          = as.character(args[5])
+out.dir           = as.character(args[6])
+correct.type      = as.character(args[7])
+
+# # testing
+# corr.data.path = "/Users/nyb/phd_code/drugsets-may2026/output/test/scz.pgc3.hg37.test_setcorrs.rdata"
+# meta.data.path = "/Users/nyb/drugsets/DATA/meta.data.2026.RData"
+# test.group     = "moa_targ_clue"
+# setsize        = 10
+# out.name       = "scz.pgc3.hg37.test_MOA"
+# out.dir        = "/Users/nyb/phd_code/drugsets-may2026/output/test"
+# correct.type   = "bonf"
 
 # load data from compute_corrs.r
-load(args[1])
+load(corr.data.path)
 
 # assign vars
 set.info = corr.data[["set.info"]]
 cov.matrix = corr.data[["cov.matrix"]]
 
 # load gene set meta 
-load(args[2])
+load(meta.data.path)
+# load("/Users/nyb/drugsets/DATA/meta.data.2026.RData")
+# meta = master.save
 
 ##### ----- SPECIFY PARAMETERS ----- ######
 
 # merge with set.info to remove any drugs not in analysis
-merged <- merge(set.info, meta, by.x = 'set.name', by.y = 'DRUG')
+merged = merge(set.info, meta.data, by = 'set.name') # drug_name, DRUG = old
 
 # specifiy codes and create analysis column
-if (tolower(args[3]) == 'atc') {
-  codes <- codesAtc
-  merged$data <- merged$atc
-} else if (tolower(args[3]) == 'moa') {
-  codes <- codesMoa
-  merged$data <- merged$moa
-} else if (tolower(args[3]) == 'ind') {
-  codes <- codesInd
-  merged$data <- merged$indication
+if (tolower(test.group) == 'atc1') {
+  codes = codes.atc1
+  merged$data <- merged$atc1
+} else if (tolower(test.group) == 'atc2') {
+  codes = codes.atc2
+  merged$data = merged$atc2
+} else if (tolower(test.group) == 'atc3') {
+  codes = codes.atc3
+  merged$data = merged$atc3
+} else if (tolower(test.group) == 'atc4') {
+  codes = codes.atc4
+  merged$data = merged$atc4
+} else if (tolower(test.group) == 'moa_clue') {
+  codes = codes.moa.clue
+  merged$data = merged$moa_clue
+} else if (tolower(test.group) == 'moa_targ_clue') {
+  codes = codes.moa.targ.clue
+  merged$data = merged$moa_targ_clue
+} else if (tolower(test.group) == 'moa_chembl') {
+  codes = codes.moa.chembl
+  merged$data = merged$moa_chembl
+} else if (tolower(test.group) == 'moa_targ_chembl') {
+  codes = codes.moa.targ.chembl
+  merged$data = merged$moa_targ_chembl
 } else {
-  print('Invalid input for enrichment group.')
+  message('Invalid input for enrichment group.')
 }
 
 ##### ----- FUNCTIONS ----- #####
@@ -47,14 +76,14 @@ if (tolower(args[3]) == 'atc') {
 # function to run multiple linear regression
 lnreg_dep <- function(X, cov.matrix, y) {
   
-  N = length(y); K = ncol(X)                                                  # define N & K
-  df <- (N - K)                                                               # calculate degrees of freedom 
-  Xt <- t(X)                                                                  # tranpose X 
+  N = length(y); K = ncol(X)                                               # define N & K
+  df <- (N - K)                                                            # calculate degrees of freedom 
+  Xt <- t(X)                                                               # tranpose X 
   W <- solve(Xt %*% cov.matrix %*% X)                                      # compute W matrix 
   B <- W %*% Xt %*% cov.matrix %*% y                                       # compute beta 
   sigma2 <- (t(y - (X %*% B)) %*% cov.matrix %*% (y - (X %*% B))) / df     # compute sigma squared
-  t <- B[2] / sqrt(sigma2 * W[2,2])                                           # compute test statistic 
-  p <- pt(t, df, lower.tail = F)              # compute two tailed p-value for test stat: add abs(), *2 for two-tailed
+  t <- B[2] / sqrt(sigma2 * W[2,2])                                        # compute test statistic 
+  p <- pt(t, df, lower.tail = F)                                           # compute two tailed p-value for test stat: add abs(), *2 for two-tailed
   se <- sqrt(sigma2 * W[2,2])                                                 # /sqrt(N) calculate standard error
   error <- qt(0.975,df=(N-K))*se                                              # calculate error margin
   left <- (B[2] - error)                                                      # calculate lower bound of ci
@@ -80,15 +109,15 @@ ones <- as.vector(rep(c(1),each=length(merged$data)))
 size <- as.vector(as.numeric(merged$size))
 
 # define empty data frame 
-results <- data.frame(matrix(NA, nrow = 0, ncol = 8))
+results <- data.frame(matrix(NA, nrow = 0, ncol = 9))
 
-# loop through all unique ATC codes in data set and run linear regression
+# loop through all unique drug group codes in data and run linear regression
 for (code in codes) {
 
   # get indices of group 
-  ind <- which(sapply(merged$data, function(y) code %in% y))            # get group indices
+  ind <- which(sapply(merged$data, function(y) code %in% y))         # get indices of drugs in group
   
-  if (length(ind) >= as.numeric(5)) {   # args[4]
+  if (length(ind) >= setsize) {   # args[4]
 
     # binarize group
     merged$bin <- 0                                                  # set all values equal to 0
@@ -102,7 +131,7 @@ for (code in codes) {
     outcome <- lnreg_dep(X, cov.matrix, y)
     
     # paste results with code 
-    outcome <- append(code,outcome)
+    outcome <- c(code, outcome, length(ind))
     
     # add to dataframe 
     results <- rbind(outcome, results)
@@ -114,17 +143,17 @@ for (code in codes) {
 }
 
 # add column names to results
-colnames(results) <- c('GROUP','BETA','SE','CI_lower','CI_upper','T','DF','P')
+colnames(results) <- c('GROUP','BETA','SE','CI_lower','CI_upper','T','DF','P', 'GROUP_N')
 results <- results %>% mutate_at(c('BETA','SE','CI_lower','CI_upper','T','DF','P'), as.numeric)
 results <- results[order(results$P),]
 
-if (args[7] == 'bonf') {
+if (correct.type == 'bonf') {
   
   # Bonferroni correction
   bonf <- 0.05 / nrow(results)
   results_bonf <- subset(results, P < bonf)
   
-} else if (args[7] == 'fdr') {
+} else if (correct.type == 'fdr') {
   
   # FDR correction
   results$fdrP <- p.adjust(results$P, method = 'BH')
@@ -133,16 +162,16 @@ if (args[7] == 'bonf') {
 }
 
 # save results 
-write.table(results, file.path(args[6], sprintf('lnreg.%s.csv', args[5])), row.names = FALSE, sep=',', quote = FALSE)
+write.table(results, file.path(out.dir, sprintf('%s.groups.out', out.name)), row.names = FALSE, sep='\t', quote = FALSE)
 
 # save corrected results
-if (args[7] == 'bonf') {
+if (correct.type == 'bonf') {
   if (nrow(results_bonf) > 0) {
-    write.table(results_bonf, file.path(args[6], sprintf('lnreg.%s.%s.csv', args[7], args[5])), row.names = FALSE, sep=',', quote = FALSE)
+    write.table(results_bonf, file.path(out.dir, sprintf('%s.%s.groups.out', out.name, correct.type)), row.names = FALSE, sep='\t', quote = FALSE)
   }
-} else if (args[7] == 'fdr') {
+} else if (correct.type == 'fdr') {
   if (nrow(results_fdr) > 0) {
-    write.table(results_fdr, file.path(args[6], sprintf('lnreg.%s.%s.csv', args[7], args[5])), row.names = FALSE, sep=',', quote = FALSE)
+    write.table(results_fdr, file.path(out.dir, sprintf('%s.%s.groups.out', out.name, correct.type)), row.names = FALSE, sep='\t', quote = FALSE)
   }
 }
 

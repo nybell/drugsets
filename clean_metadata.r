@@ -19,9 +19,9 @@ colnames(meta)[9] <- 'atc'
 meta$indication <- lapply(meta$indication, function(x) tolower(gsub("[^[:alnum:][:space:],]", "", x)))     # meta$indication
 meta$moa <- lapply(meta$moa, function(x) tolower(gsub("[^[:alnum:][:space:],]", "", x)))                   # meta$moa
 meta$atc <- lapply(meta$atc, function(x) (gsub("[^[:alnum:][:space:],]", "", x)))                          # meta$atc
-meta$disease_area <- lapply(meta$disease_area, function(x) tolower(gsub("[^[:alnum:],]", "", x))) # meta$disease_area
-meta$ENTREZ <- lapply(meta$ENTREZ, function(x) gsub("[^[:alnum:],]", "", x))                      # meta$ENTREZ
-meta$target <- lapply(meta$target, function(x) gsub("[^[:alnum:],]", "", x))                      # meta$target
+meta$disease_area <- lapply(meta$disease_area, function(x) tolower(gsub("[^[:alnum:],]", "", x)))          # meta$disease_area
+meta$ENTREZ <- lapply(meta$ENTREZ, function(x) gsub("[^[:alnum:],]", "", x))                               # meta$ENTREZ
+meta$target <- lapply(meta$target, function(x) gsub("[^[:alnum:],]", "", x))                               # meta$target
 
 # get atc codes
 tmp <- meta %>% separate_rows(atc, sep = ',  ')
@@ -62,10 +62,10 @@ write.csv(ind_data, 'ind_groups.csv', row.names = FALSE)
 # split strings into vectors
 meta$indication <- lapply(meta$indication, function(x) as.vector(strsplit(x, ', ')[[1]]))     # meta$indication
 meta$moa <- lapply(meta$moa, function(x) as.vector(strsplit(x, ', ')[[1]]))                   # meta$moa
-meta$atc <- lapply(meta$atc, function(x) as.vector(strsplit(x, ',  ')[[1]]))                   # meta$atc
-meta$disease_area <- lapply(meta$disease_area, function(x) as.vector(strsplit(x, ',')[[1]])) # meta$disease_area
-meta$ENTREZ <- lapply(meta$ENTREZ, function(x) as.vector(strsplit(x, ',')[[1]]))             # meta$ENTREZ
-meta$target <- lapply(meta$target, function(x) as.vector(strsplit(x, ',')[[1]]))             # meta$indication
+meta$atc <- lapply(meta$atc, function(x) as.vector(strsplit(x, ',  ')[[1]]))                  # meta$atc
+meta$disease_area <- lapply(meta$disease_area, function(x) as.vector(strsplit(x, ',')[[1]]))  # meta$disease_area
+meta$ENTREZ <- lapply(meta$ENTREZ, function(x) as.vector(strsplit(x, ',')[[1]]))              # meta$ENTREZ
+meta$target <- lapply(meta$target, function(x) as.vector(strsplit(x, ',')[[1]]))              # meta$indication
 
 # save file
 save(meta,codesAtc,codesInd,codesMoa, file='~/drugsets/DATA/metadata.rdata')

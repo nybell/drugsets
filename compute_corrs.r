@@ -2,11 +2,13 @@
 
 args = commandArgs(trailingOnly = TRUE)     # input arguments in order: .raw file, gene set file, MAGMA output file, pheno name, working directory
 
-# for testing purposes
-# setwd('~/drugsets/')
-# raw.file = '/Users/nyb/drugsets/DATA/MAGMA_ANNOT/dgsa_input/T2D-step2.genes.raw'
-# set.file = '~/drugsets/DATA/GENESETS/entrez_cond_sets.txt'
-# res.file = '~/drugsets/OUTPUT/T2D_SOLO.gsa.out'
+# # for testing purposes
+# # setwd('~/drugsets/')
+# raw.file = '/Users/nyb/phd_code/drugsets-may2026/output/magma-v110-s1s2-pops/scz.pgc3.hg37.step2.genes.raw'
+# set.file = '/Users/nyb/drugsets/DATA/GENESETS/solo_ensembl_cond_sets.txt'
+# res.file = '/Users/nyb/phd_code/drugsets-may2026/output/test/scz.pgc3.hg37.test_SOLO.gsa.out'
+# setwd('/Users/nyb/phd_code/drugsets-may2026/output/test/')
+# correct = as.logical(TRUE)
 
 # set working directory 
 setwd(args[5])
