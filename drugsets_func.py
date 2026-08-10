@@ -138,7 +138,11 @@ def compute_cor_matrix(raw_file, gene_sets, output, out_name, out_dir, correct_c
     else:
         # search for MAGMA output using prefix
         extensions = ['.gsa.out', '.gsa.out.txt']
-        possible_paths = [f"{output}.drug{ext}" for ext in extensions] + \
+        possible_paths = [f"{output}.drug_mp0{ext}" for ext in extensions] + \
+                         [f"{output}.drug_mp1{ext}" for ext in extensions] + \
+                         [f"{output}.drug_mp2{ext}" for ext in extensions] + \
+                         [f"{output}.drug_mp3{ext}" for ext in extensions] + \
+                         [f"{output}.drug_mp4{ext}" for ext in extensions] + \
                          [f"{output}{ext}" for ext in extensions]
         
         gsa = next((os.path.normpath(p) for p in possible_paths if os.path.isfile(p)), None)
@@ -181,7 +185,7 @@ def test_enrich(corrdata, metaRdata, out_name, out_dir, nsize, correct, enrich_t
             logging.info(f"[+] INFO: Testing enrichment for {enrich_type}...")
             run_lnreg(enrich_type)
         else:
-            for group in ['atc1', 'atc2', 'atc3', 'atc4', 'moa_clue', 'moa_targ_clue', 'moa_chembl', 'moa_targ_chembl']:
+            for group in ['atc1', 'atc2', 'atc3', 'atc4', 'moa_group', 'moa_nested', 'moa_specific']:
                 logging.info(f"[+] INFO: Testing enrichment for {group}...")
                 run_lnreg(group)
 

@@ -21,7 +21,8 @@ logging.basicConfig(
 
 # drug set analysis class
 class DrugSetAnalysis:
-    def __init__(self, raw_file, drugsets, magma_path, out, conditional, setsize, gene_id, enrich, enrich_file, correct_cov, nsize, correct, magma_cov=None, use_pops=None, adj_pops=True):
+    def __init__(self, raw_file, drugsets, magma_path, out, conditional, setsize, gene_id,
+                 enrich, enrich_file, correct_cov, nsize, correct, magma_cov=None, use_pops=None, adj_pops=True, dgidb_filter=None):
         self.raw_file = raw_file
         self.drugsets = drugsets
         self.magma_path = magma_path
@@ -39,21 +40,67 @@ class DrugSetAnalysis:
         self.magma_cov = magma_cov
         self.use_pops = use_pops
         self.adj_pops = adj_pops
+        self.dgidb_filter = dgidb_filter
         self.filepaths = self.set_filepaths()
 
     def set_filepaths(self):
         cond_prefixes = {'yes': '_cond', 'no': ''}
         gene_id_conditions = ['ensembl'] # 'entrez', 'ensembl', 'ensembl92'
         filepaths = {}
+        # for dgidb comp of name
+        dgidb_str = f"_dgidb_{self.dgidb_filter.lower()}" if self.dgidb_filter else "_dgidb_median"
+        # loop through gene ids 
         for gene_id in gene_id_conditions:
-            filepaths[gene_id] = {
-                'drug': df_func.set_paths(f"drug_{gene_id}", f"{cond_prefixes[self.conditional]}", self.setsize, GENESETDIR),
-                'moa_clue': df_func.set_paths(f"moa_clue_{gene_id}", f"{cond_prefixes[self.conditional]}", self.setsize, GENESETDIR),
-                'moa_targ_clue': df_func.set_paths(f"moa_targ_clue_{gene_id}", f"{cond_prefixes[self.conditional]}", self.setsize, GENESETDIR),
-                'moa_chembl': df_func.set_paths(f"moa_chembl_{gene_id}", f"{cond_prefixes[self.conditional]}", self.setsize, GENESETDIR),
-                'moa_targ_chembl': df_func.set_paths(f"moa_targ_chembl_{gene_id}", f"{cond_prefixes[self.conditional]}", self.setsize, GENESETDIR)
-            }
+            paths = {}
+            # generate drug_mp0 to drug_mp4 paths
+            for i in range(5):
+                key = f'drug_mp{i}'
+                prefix = f"drug_mp{i}{dgidb_str}_{gene_id}"
+                paths[key] = df_func.set_paths(prefix, cond_prefixes[self.conditional], self.setsize, GENESETDIR)
+            # moa sets
+            paths['moa_group'] = df_func.set_paths(f"moa_targ_chembl_group_{gene_id}", cond_prefixes[self.conditional], self.setsize, GENESETDIR)
+            paths['moa_nested'] = df_func.set_paths(f"moa_targ_chembl_nested_{gene_id}", cond_prefixes[self.conditional], self.setsize, GENESETDIR)
+            paths['moa_specific'] = df_func.set_paths(f"moa_targ_chembl_specific_{gene_id}", cond_prefixes[self.conditional], self.setsize, GENESETDIR)
+            
+            filepaths[gene_id] = paths
+            
         return filepaths
+    
+    def build_magma_cmd(self, gene_sets, label, adjusted_genes_out=None):
+        # base command
+        parts = [self.magma_path]
+
+        # gene results (+ PoPS-substituted .genes.out when --use_pops is set)
+        if adjusted_genes_out:
+            parts.append(f"--gene-results {self.raw_file} overwrite={adjusted_genes_out}")
+        else:
+            parts.append(f"--gene-results {self.raw_file}")
+
+        # drug gene sets
+        parts.append(f"--set-annot {gene_sets}")
+
+        # collect everything to condition on (and hide) into one list
+        hide_terms = []
+
+        # optional gene-level covariates (e.g. expression)
+        if self.magma_cov:
+            cov_file, covars = df_func.get_magma_covars(self.magma_cov)
+            covar_str = ",".join(covars)
+            parts.append(f"--gene-covar {cov_file} filter-read={covar_str}")
+            hide_terms.extend(covars)
+
+        # optional conditioning on the druggable background set
+        if self.conditional == 'yes':
+            hide_terms.append("druggable")
+
+        # single condition-hide modifier
+        if hide_terms:
+            parts.append(f"--model condition-hide={','.join(hide_terms)}")
+
+        parts.append("--settings gene-info")
+        parts.append(f"--out {self.out + label}")
+
+        return " ".join(parts)
 
     # TO DO: build in gene ID mapping to the .preds file (i.e., replace ENSGID w/ entrez depending on the .raw input file)
     def normalize_pops_and_adjust_genes_out(self, magma_genes_out, pops_preds, adj_pops):
@@ -81,48 +128,35 @@ class DrugSetAnalysis:
             raise
             
     def run_analysis(self, verbose=False):
-        gene_sets = self.filepaths[self.gene_id][self.drugsets]
-        # Set output labels for each chosen analysis
+        # map each requested analysis to its gene-set file key
         if self.drugsets == 'all':
-            analysis_labels = ['.drug' '.moa_clue', '.moa_targ_clue', '.moa_chembl', '.moa_targ_chembl']
+            set_keys = ['drug_mp0', 'drug_mp1', 'drug_mp2', 'drug_mp3', 'drug_mp4', 'moa_group', 'moa_nested', 'moa_specific']
         else:
-            analysis_labels = ['.' + self.drugsets.lower()]
-        # log labels
-        logging.info(f"[+] INFO: using parameters: {', '.join(analysis_labels)}")
-        # run
+            set_keys = [self.drugsets]
+
+        logging.info(f"[+] INFO: using parameters: {', '.join('.' + k for k in set_keys)}")
+
+        # PoPS substitution is label-independent: build the adjusted .genes.out once
+        adjusted_genes_out = None
+        if self.use_pops:
+            magma_genes_out, pops_preds = self.use_pops
+            adjusted_genes_out = self.normalize_pops_and_adjust_genes_out(
+                magma_genes_out, pops_preds, self.adj_pops
+            )
+
         try:
             logging.info("[+] INFO: Defining MAGMA command...")
-            for label in analysis_labels:
-                if self.use_pops:
-                    magma_genes_out, pops_preds = self.use_pops
-                    adjusted_genes_out = self.normalize_pops_and_adjust_genes_out(magma_genes_out, pops_preds, self.adj_pops)
-                    if self.magma_cov:
-                        cov_file, covars = df_func.get_magma_covars(self.magma_cov)
-                        covar_str = ",".join(covars)
-                        # format command
-                        cmd = f"{self.magma_path} --gene-results {self.raw_file} overwrite={adjusted_genes_out} --set-annot {gene_sets} --gene-covar {cov_file} filter-read={covar_str} --model condition-hide={covar_str} --settings gene-info --out {self.out + label}"
-                    else:
-                        cmd = f"{self.magma_path} --gene-results {self.raw_file} overwrite={adjusted_genes_out} --set-annot {gene_sets} --settings gene-info --out {self.out + label}"
-                else:
-                    if self.magma_cov:
-                        cov_file, covars = df_func.get_magma_covars(self.magma_cov)
-                        covar_str = ",".join(covars)
-                        # format command
-                        cmd = f"{self.magma_path} --gene-results {self.raw_file} --set-annot {gene_sets} --gene-covar {cov_file} filter-read={covar_str} --model condition-hide={covar_str} --settings gene-info --out {self.out + label}"
-                    else:
-                        # format command
-                        cmd = f"{self.magma_path} --gene-results {self.raw_file} --set-annot {gene_sets} --out {self.out + label}"
-                
-                # check verbose and run
+            for key in set_keys:
+                label = '.' + key
+                gene_sets = self.filepaths[self.gene_id][key]
+                cmd = self.build_magma_cmd(gene_sets, label, adjusted_genes_out)
+
+                logging.info("[+] INFO: Running drug gene-set analysis with MAGMA")
                 if verbose:
-                    logging.info(f"[+] INFO: Running drug gene-set analysis with MAGMA")
                     logging.info("[+] INFO: MAGMA Command")
                     logging.info(cmd)
                     subprocess.run(cmd, shell=True, check=True)
                 else:
-                    logging.info("[+] INFO: Running drug gene-set analysis with MAGMA")
-                    # capture_output=True suppresses stdout and stderr
-                    # text=True decodes the output to string instead of bytes
                     subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
 
             logging.info("[+] INFO: Drug gene set analysis completed.")
@@ -137,7 +171,7 @@ class DrugSetAnalysis:
             return
             
         # check 2: is drugsets set to drug, all, or none
-        if self.drugsets not in ('drug', 'all', None, 'None'):
+        if self.drugsets not in ('drug_mp0', 'drug_mp1', 'drug_mp2', 'drug_mp3', 'drug_mp4', 'moa_group', 'moa_nested', 'moa_specific', 'all', None, 'None'):
             logging.warning(f'[+] WARNING: Enrichment testing requires drug-level gsa results. Skipping enrichment since --drugsets is set to "{self.drugsets}".')
             return
             
@@ -158,7 +192,7 @@ class DrugSetAnalysis:
             out_dir = self.out_dir
 
         # set path to gene sets
-        gene_sets = self.filepaths[self.gene_id]['drug']
+        gene_sets = self.filepaths[self.gene_id]["drug_mp4"]
 
         try:
             # execution block (redundant logic removed)
@@ -176,16 +210,18 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Drug Gene Set Analysis using MAGMA.")
     parser.add_argument("--raw_file", required=True, 
                         help="Full path to MAGMA .raw file")
-    parser.add_argument("--drugsets", required=False, default = None, choices=['drug', 'moa_clue', 'moa_targ_clue', 'moa_chembl', 'moa_targ_chembl', 'all'], 
+    parser.add_argument("--drugsets", required=False, default = None, choices=['drug_mp0', 'drug_mp1', 'drug_mp2', 'drug_mp3', 'drug_mp4', 
+                                                                               'moa_group', 'moa_nested', 'moa_specific', 'all'], 
                         help="Type of drug gene set to use (individual drug, ATC code, mechanism of action, clinical indication)")
+    parser.add_argument("--dgidb_filter", required=False, default="median", choices=["all", "median", "p75", "none"],
+                        help="Filter for DGIdb interaction score to include genes in drug gene sets (default: median)")
     parser.add_argument("--magma", required=False, default="magma", 
                         help="Path to MAGMA executable")
     parser.add_argument("--out", required=True, 
                         help="Full path to output directory + file name prefix")
     parser.add_argument("--conditional", required=False, default='yes', choices=['yes','no'], 
                         help="Condition on all all druggable genes (recommended)?")
-    parser.add_argument("--enrich", required=False, default=None, choices=[None, 'atc1', 'atc2', 'atc3', 'atc4'
-                                                                           'moa_clue', 'moa_targ_clue', 'moa_chembl', 'moa_targ_chembl'], 
+    parser.add_argument("--enrich", required=False, default=None, choices=[None, 'atc1', 'atc2', 'atc3', 'atc4'], 
                         help="Specify drug group type to test for enrichment")
     parser.add_argument("--enrich_file", required=False, default=None,
                         help="Full path to gsa.out file to use for enrichment analysis (if different from the one generated in this pipeline)")
@@ -223,7 +259,8 @@ if __name__ == "__main__":
         # set up analysis class
         analysis = DrugSetAnalysis(
             raw_file=args.raw_file, 
-            drugsets=args.drugsets, 
+            drugsets=args.drugsets,
+            dgidb_filter=args.dgidb_filter,
             magma_path=args.magma, 
             out=args.out, 
             conditional=args.conditional, 
