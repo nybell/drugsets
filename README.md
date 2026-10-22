@@ -38,7 +38,7 @@ Keep everything in place: DRUGSETS finds the gene sets and helper scripts relati
 
 ## Input files
 
-Output of a MAGMA gene analysis, with **Ensembl** gene IDs:
+If running MAGMA gene z-score-based analysis, only the first file is needed. If running the PoPS-based analysis, you need a PoPS .pred file and the MAGMA .genes.out. All files need **Ensembl** gene IDs:
 
 | File | Needed for |
 |---|---|
