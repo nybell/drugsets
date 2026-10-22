@@ -93,33 +93,9 @@ def get_magma_covars(magma_cov):
     covariates = magma_cov[1:]
     return cov_file, covariates
 
-# define function to create new gene set file with custom size
-def setsize(path, file, size):
-    
-    # create name for new gene set file 
-    new = file.replace('.txt', '_min'+str(size)+'.txt')
-    new = "/tmp"+new
-
-    # add path
-    new = path+new
-
-    # create file 
-    with open(os.path.normpath(path+file)) as oldfile, open(os.path.normpath(new), 'w') as newfile:
-        for line in oldfile:
-                if len(line.split('\t')) -3 >= int(size):
-                    newfile.write(line)
-
-# Function to set gene set paths
-def set_paths(prefix, cond, set_size, GENESETDIR):
-    base = os.path.normpath(os.path.join(GENESETDIR, f"{prefix}{cond}_sets.txt"))
-    
-    # For default set size
-    if set_size == 2:
-        return base
-
-    # For custom minimum gene set size
-    setsize(GENESETDIR, f"/{prefix}{cond}_sets.txt", set_size)
-    return os.path.normpath(os.path.join(GENESETDIR, f"tmp/{prefix}{cond}_sets_min{set_size}.txt"))
+# Function to set gene set paths (minimum set size is applied after the analysis, in drugsets_post.process_gsa)
+def set_paths(prefix, cond, GENESETDIR):
+    return os.path.normpath(os.path.join(GENESETDIR, f"{prefix}{cond}_sets.txt"))
 
 # function for computing correlation matrix
 def compute_cor_matrix(raw_file, gene_sets, output, out_name, out_dir, correct_cov):

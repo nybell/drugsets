@@ -4,9 +4,9 @@ args = commandArgs(trailingOnly = TRUE)     # input arguments in order: .raw fil
 
 # # for testing purposes
 # # setwd('~/drugsets/')
-# raw.file = '/Users/nyb/phd_code/drugsets-may2026/output/magma-v110-s1s2-pops/scz.pgc3.hg37.step2.genes.raw'
-# set.file = '/Users/nyb/drugsets/DATA/GENESETS/solo_ensembl_cond_sets.txt'
-# res.file = '/Users/nyb/phd_code/drugsets-may2026/output/test/scz.pgc3.hg37.test_SOLO.gsa.out'
+# raw.file = "/Users/nyb/phd_code/drugsets-may2026/output/magma-v110-s1s2-pops-no-mhc/adhd.no.mhc.pgc2022.step2.genes.raw"
+# set.file = '/Users/nyb/drugsets/DATA/GENESETS/drug_mp0_dgidb_median_ensembl_cond_sets.txt'
+# res.file = '/Users/nyb/phd_code/drugsets-may2026/output/test/adhd.no.mhc.pgc2022.magZ.cond.drug_mp0.gsa.out'
 # setwd('/Users/nyb/phd_code/drugsets-may2026/output/test/')
 # correct = as.logical(TRUE)
 

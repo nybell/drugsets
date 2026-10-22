@@ -17,11 +17,11 @@ out.dir           = as.character(args[6])
 correct.type      = as.character(args[7])
 
 # # testing
-# corr.data.path = "/Users/nyb/phd_code/drugsets-may2026/output/test/scz.pgc3.hg37.test_setcorrs.rdata"
+# corr.data.path = "/Users/nyb/phd_code/drugsets-may2026/output/enrich-out-magma-z-no-mhc/dgidb2-median/mp0/cond/adhd.no.mhc.pgc2022.magZ.cond.cov.TRUE_setcorrs.rdata"
 # meta.data.path = "/Users/nyb/drugsets/DATA/meta.data.2026.RData"
-# test.group     = "moa_targ_clue"
-# setsize        = 10
-# out.name       = "scz.pgc3.hg37.test_MOA"
+# test.group     = "atc3"
+# setsize        = 5
+# out.name       = "adhd.no.mhc.pgc2022"
 # out.dir        = "/Users/nyb/phd_code/drugsets-may2026/output/test"
 # correct.type   = "bonf"
 
@@ -35,6 +35,7 @@ cov.matrix = corr.data[["cov.matrix"]]
 # load gene set meta 
 load(meta.data.path)
 # load("/Users/nyb/drugsets/DATA/meta.data.2026.RData")
+# load("/Users/nyb/drugsets/DATA/meta-data-old/metadata.RData")
 # meta = master.save
 
 ##### ----- SPECIFY PARAMETERS ----- ######

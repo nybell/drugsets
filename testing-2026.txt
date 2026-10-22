@@ -1,0 +1,148 @@
+# Testing code for drugsets version 2 (2026)
+# Nate
+# 16 Oct 2026
+
+# gtex
+GTEX="/Users/nyb/phd_code/data/GTEx/GTEx_v10_RNASeQCv2.4.2_ensembl_gene_median_tpm.cov"
+
+# scz genes.raw and genes.out
+SCZ_OUT="/Users/nyb/phd_code/drugsets-may2026/output/magma-v110-s1s2-pops-no-mhc/scz.no.mhc.pgc3.step2.genes.out"
+SCZ_RAW="/Users/nyb/phd_code/drugsets-may2026/output/magma-v110-s1s2-pops-no-mhc/scz.no.mhc.pgc3.step2.genes.raw"
+
+# scz pops .preds file
+SCZ_POPS="/Users/nyb/phd_code/drugsets-may2026/pops-out-no-mhc/pops-coexp/scz.no.mhc.pgc3.coexp.preds"
+
+# out dir
+OUT_DIR="/Users/nyb/Desktop/drugsets-testing-2026"
+
+# gsa out dir
+GSA_MAGZ="/Users/nyb/phd_code/drugsets-may2026/output/drugsets-out-magma-z-no-mhc/dgidb2-median"
+GSA_POPS="/Users/nyb/phd_code/drugsets-may2026/output/drugsets-out-pops-coexp-no-mhc/dgidb2-median"
+
+# scz drugsets output
+SCZ_MAGZ_GSA="${GSA_MAGZ}/mp0/cond/scz.no.mhc.pgc3.magZ.cond.drug_mp0.gsa.out"
+SCZ_POPS_GSA="${GSA_POPS}/mp0/cond/scz.no.mhc.pgc3.coexp.cond.drug_mp0.gsa.out"
+
+# scz null distribution - magma z
+SCZ_MAGZ_NULL="/Users/nyb/phd_code/drugsets-may2026/data/null_set_distributions/scz.no.mhc.pgc3.drug.genome.magmaz.cond.null.dist.parquet"
+
+# scz null distribution - pops
+SCZ_POPS_NULL="/Users/nyb/phd_code/drugsets-may2026/data/null_set_distributions/scz.no.mhc.pgc3.drug.genome.coexp.cond.null.dist.parquet"
+
+DRUGSETS_DIR="/Users/nyb/drugsets"
+
+
+
+# ---- test runs: drug sets ---- # 
+
+# -- test run 1: pops -- 
+
+python ${DRUGSETS_DIR}/drugsets.py --raw_file ${SCZ_RAW} \
+--drugsets drug_mp0 \
+--gene_id ensembl \
+--n_null 100000 \
+--setsize 2 \
+--use_pops ${SCZ_OUT} ${SCZ_POPS} \
+--out /Users/nyb/Desktop/drugsets-testing-2026/scz.pops.test
+
+
+
+# -- test run 1: magma-z -- 
+
+python ${DRUGSETS_DIR}/drugsets.py --raw_file ${SCZ_RAW} \
+--drugsets drug_mp0 \
+--gene_id ensembl \
+--setsize 2 \
+--out /Users/nyb/Desktop/drugsets-testing-2026/scz.magz.test
+
+
+# ---- test runs: moa sets ---- # 
+
+
+# -- test run 2: pops -- 
+
+python ${DRUGSETS_DIR}/drugsets.py --raw_file ${SCZ_RAW} \
+--drugsets moa_combined \
+--gene_id ensembl \
+--n_null 100000 \
+--setsize 2 \
+--use_pops ${SCZ_OUT} ${SCZ_POPS} \
+--out /Users/nyb/Desktop/drugsets-testing-2026/scz.pops.test
+
+
+# -- test run 2: magma-z -- 
+
+python ${DRUGSETS_DIR}/drugsets.py --raw_file ${SCZ_RAW} \
+--drugsets moa_combined \
+--gene_id ensembl \
+--setsize 2 \
+--out /Users/nyb/Desktop/drugsets-testing-2026/scz.magz.test
+
+
+# -- test group enrichment test -- 
+
+python ${DRUGSETS_DIR}/drugsets.py \
+  --raw_file ${SCZ_RAW} \
+  --enrich_file /Users/nyb/Desktop/drugsets-testing-2026/scz.pops.test.drug_mp0.drugs.out \
+  --enrich_sets drug_mp0 \
+  --enrich atc3 \
+  --correct_cov TRUE \
+  --correct fdr \
+  --nsize 5 \
+  --gene_id ensembl \
+  --out /Users/nyb/Desktop/drugsets-testing-2026/scz.no.mhc.pgc3.pops.cond.cov.TRUE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# --- enrich code ---
+python "${DRUGSETS_DIR}/drugsets.py" \
+                --raw_file "$raw_file" \
+                --out "$current_out" \
+                --gene_id ensembl \
+                --enrich "$enrich" \
+                --enrich_file "$enrich_file" \
+                --enrich_sets "drug_${MP}" \
+                --correct_cov "$cov" \
+                --correct "fdr" \
+                --nsize 5
+
+
+
+
+
+
+
+
+
+
+
+
+
+
