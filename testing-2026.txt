@@ -95,12 +95,30 @@ python ${DRUGSETS_DIR}/drugsets.py \
 
 
 
+# -- test both drugsets and enrichment testing -- # 
+
+python ${DRUGSETS_DIR}/drugsets.py --raw_file ${SCZ_RAW} \
+--drugsets drug_mp0 \
+--gene_id ensembl \
+--setsize 2 \
+--enrich atc3 \
+--correct_cov TRUE \
+--correct fdr \
+--nsize 5 \
+--out /Users/nyb/Desktop/drugsets-testing-2026/scz.drug.atc3.test
 
 
 
 
-
-
+python ${DRUGSETS_DIR}/drugsets.py --raw_file ${SCZ_RAW} \
+--drugsets drug_mp0 \
+--gene_id ensembl \
+--setsize 2 \
+--enrich atc3 \
+--correct_cov TRUE \
+--correct fdr \
+--nsize 1000 \
+--out /Users/nyb/Desktop/drugsets-testing-2026/scz.drug.atc3.test
 
 
 
