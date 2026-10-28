@@ -56,6 +56,16 @@ python ${DRUGSETS_DIR}/drugsets.py --raw_file ${SCZ_RAW} \
 --out /Users/nyb/Desktop/drugsets-testing-2026/scz.magz.test
 
 
+# -- test run 1c: magma-z with all dgidb genes
+python ${DRUGSETS_DIR}/drugsets.py --raw_file ${SCZ_RAW} \
+--drugsets drug_mp0 \
+--dgidb_filter all \
+--gene_id ensembl \
+--setsize 2 \
+--out /Users/nyb/Desktop/drugsets-testing-2026/scz.magz.test
+
+
+
 # ---- test runs: moa sets ---- # 
 
 

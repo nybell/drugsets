@@ -19,6 +19,15 @@ set.file = args[2]                          # "entrez_cond_sets.txt"
 res.file = args[3]                          # "cond.gsa.out"
 correct = as.logical(args[6])
 
+# function to load magma gsa file
+read.gsa = function(path) {
+  res = read.table(path, header=TRUE, stringsAsFactors=FALSE, na.strings=character(0))
+  for (col in intersect(c("NGENES", "BETA", "BETA_STD", "SE", "P"), names(res)))
+    res[[col]] = suppressWarnings(as.numeric(res[[col]]))
+  if (!"FULL_NAME" %in% names(res)) res$FULL_NAME = res$VARIABLE
+  res
+}
+
 if (correct == TRUE) {
   prune.thresh = 0.1  #used for gene-set correlation matrix as well
   
@@ -71,7 +80,7 @@ if (correct == TRUE) {
   outcome = lm(outcome ~ residualize - 1)$residuals
   
   
-  gsa.res = read.table(res.file, header=T, stringsAsFactors=F)
+  gsa.res = read.gsa(res.file)
   sets = strsplit(scan(set.file, what="", sep="\n"), "\t")
   sets.use = c(gsa.res$FULL_NAME, "druggable")
   
@@ -115,7 +124,7 @@ if (correct == TRUE) {
 } else if (correct == FALSE) {
   
   # load it 
-  gsa.res = read.table(res.file, header=T, stringsAsFactors=F)
+  gsa.res = read.gsa(res.file)
   
   # remove "druggable" from the data
   gsa.res = subset(gsa.res, FULL_NAME != "druggable")
