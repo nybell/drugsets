@@ -143,6 +143,49 @@ python drugsets.py \
 Use the same `--conditional` setting as the run that produced the drug-level results. Enrichment uses MAGMA's drug-level test statistics (`BETA / SE`), also for PoPS runs.
 
 ---
+## Testing on example data
+
+The two examples below are the most time-intensive options in DRUGSETS:
+1. A PoPS-based run on all drugs (`drug_mp0`) with an empirical null of 10.1 million null gene sets.
+2. ATC3 enrichment testing on the all-drug results, correcting for correlation between drug gene sets (`--correct_cov TRUE`, the default).
+
+All other analyses run faster. Drug/MoA set runs using standard MAGMA z-scores take less than 2 minutes.
+
+Times are from runs on a 2021 MacBook Pro (M1 Max, 10-core CPU, 32 GB RAM).
+
+### Drugsets (PoPS, all drugs)
+
+```bash
+DRUGSETS_DIR="/PATH/TO/drugsets"
+RAW_FILE="/PATH/TO/drugsets/DATA/example-data/scz.hg37.genes.raw"
+GENES_FILE="/PATH/TO/drugsets/DATA/example-data/scz.hg37.genes.out"
+PREDS_FILE="/PATH/TO/drugsets/DATA/example-data/scz.hg37.preds"
+OUT_DIR="/PATH/TO/drugsets-testing"
+
+
+python ${DRUGSETS_DIR}/drugsets.py --raw_file "$RAW_FILE" \
+            --use_pops ${GENES_FILE} ${PREDS_FILE}
+            --drugsets drug_mp0 \
+            --out "$OUT_TEST" \
+            --gene_id ensembl \
+	          --enrich atc3 \
+	          --out "${OUT_DIR}/scz.test"
+```
+Run time [2021 MacBook Pro, M1 Max silicon, 32GB RAM]: 15.35 minutes
+
+### ATC3 enrichment testing
+
+```bash
+python ${DRUGSETS_DIR}/drugsets.py --raw_file "$RAW_FILE" \
+	    --gene_id ensembl \
+	    --enrich atc3 \
+      --enrich_sets drug_mp0 \
+	    --enrich_file "${OUT_DIR}/scz.test.drug_mp0.drugs.out" \
+	    --out "${OUT_DIR}/scz.test"
+```
+Run time [2021 MacBook Pro, M1 Max silicon, 32GB RAM]: 15.78
+
+---
 
 ## Output
 
