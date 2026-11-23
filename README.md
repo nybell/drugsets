@@ -22,6 +22,8 @@ cd drugsets
 pip install numpy pandas scipy pyarrow
 ```
 
+Install time estimated: < 10 minutes
+
 **Repository contents**
 
 | File | Purpose |
@@ -69,7 +71,7 @@ python drugsets.py \
   --out results/scz
 ```
 
-The empirical null uses 10.1 million null gene sets per set type by default, which takes time. For a quick test run, add `--n_null 10000`.
+The empirical null uses 10.1 million null gene sets per set type by default, which takes time (about 16 minutes, see below). For a quick test run, add `--n_null 10000`.
 
 **Gene sets** (`--drugsets`)
 
