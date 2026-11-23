@@ -166,12 +166,12 @@ OUT_DIR="/PATH/TO/drugsets-testing"
 
 
 python ${DRUGSETS_DIR}/drugsets.py --raw_file "$RAW_FILE" \
-            --use_pops ${GENES_FILE} ${PREDS_FILE}
-            --drugsets drug_mp0 \
-            --out "$OUT_TEST" \
-            --gene_id ensembl \
-	          --enrich atc3 \
-	          --out "${OUT_DIR}/scz.test"
+    --use_pops ${GENES_FILE} ${PREDS_FILE} \
+    --drugsets drug_mp0 \
+    --out "$OUT_TEST" \
+    --gene_id ensembl \
+    --enrich atc3 \
+    --out "${OUT_DIR}/scz.test"
 ```
 Run time [2021 MacBook Pro, M1 Max silicon, 32GB RAM]: 15.35 minutes
 
@@ -179,11 +179,11 @@ Run time [2021 MacBook Pro, M1 Max silicon, 32GB RAM]: 15.35 minutes
 
 ```bash
 python ${DRUGSETS_DIR}/drugsets.py --raw_file "$RAW_FILE" \
-	    --gene_id ensembl \
-	    --enrich atc3 \
-      --enrich_sets drug_mp0 \
-	    --enrich_file "${OUT_DIR}/scz.test.drug_mp0.drugs.out" \
-	    --out "${OUT_DIR}/scz.test"
+    --gene_id ensembl \
+    --enrich atc3 \
+    --enrich_sets drug_mp0 \
+    --enrich_file "${OUT_DIR}/scz.test.drug_mp0.drugs.out" \
+    --out "${OUT_DIR}/scz.test"
 ```
 Run time [2021 MacBook Pro, M1 Max silicon, 32GB RAM]: 15.78
 
