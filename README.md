@@ -2,7 +2,7 @@
 
 **DRUG gene SET analysiS**: genetically informed drug repositioning with drug and mechanism-of-action (MoA) gene-set analysis in [MAGMA](https://cncr.nl/research/magma/).
 
-DRUGSETS tests whether the genes targeted by a drug (or by drugs sharing a mechanism of action) are more strongly associated with a trait than other genes. It can use standard MAGMA gene results or [PoPS](https://github.com/FinucaneLab/pops) gene scores. For PoPS-based runs it computes empirical p-values from size-matched null gene sets. It can also test whether drugs in an ATC group are enriched for association.
+DRUGSETS tests whether the genes targeted by a drug (or by drugs sharing a mechanism of action) are more strongly associated with a trait than other genes. It can use standard MAGMA gene results or [PoPS](https://github.com/FinucaneLab/pops) gene scores. For PoPS-based runs it computes empirical p-values from size-matched null gene sets. It can also test whether drugs in an ATC group are enriched for association. Install time is less than 10 minutes, and all code was tested on 2021 MacBook Pro (M1 Max, 10-core CPU, 32 GB RAM) running MacOS Sonoma 14.5.
 
 Developed by Nathaniel Bell (n.y.bell@vu.nl).
 
@@ -21,8 +21,6 @@ git clone https://github.com/nybell/drugsets.git
 cd drugsets
 pip install numpy pandas scipy pyarrow
 ```
-
-Install time estimated: < 10 minutes
 
 **Repository contents**
 
